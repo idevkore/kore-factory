@@ -1,7 +1,7 @@
 import type { IslandSession } from "./contract";
 import { isActiveState } from "./state";
 
-export const VISIBLE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const VISIBLE_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const MAX_VISIBLE_SESSIONS = 24;
 
 export interface VisibilityCandidate {
