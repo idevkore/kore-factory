@@ -8,6 +8,7 @@ import { fitIslandCamera } from "./camera";
 import { CommanderFigure } from "./CommanderFigure";
 import { Ground } from "./Ground";
 import { KeeperFigures } from "./KeeperFigures";
+import { Scenery } from "./Scenery";
 import { SessionPiece } from "./SessionPiece";
 import { StationShapes } from "./StationShapes";
 import { currentTheme } from "./theme";
@@ -49,6 +50,7 @@ export function IslandScene(props: {
       <StationShapes />
       <CommanderFigure />
       <KeeperFigures />
+      <Scenery />
       {props.sessions.map((session) => (
         <SessionPiece
           key={session.key}
