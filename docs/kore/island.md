@@ -66,7 +66,7 @@ An atoll on a deep-sea background (`#071621`): open sea (`#0F4C68`) on the squar
 - **Coral forge (work):** an anvil-shaped coral rock. Its keeper is a mermaid with a copper tail and a hammer.
 - **Lighthouse (gate):** a short striped lighthouse on rocks, its lamp lit. Its keeper, a mermaid with a blue tail, waits at its foot with a lantern.
 
-The three mermaids are told apart by tail and what they hold; each has dark hair and a pale chest wrap. Sessions are upright seahorses, side on to the camera, in the state colours:
+The three mermaids are told apart by tail and what they hold; each has long golden-blonde hair and a pale cloth bandeau. Sessions are upright seahorses, side on to the camera, in the state colours:
 
 | State                                       | Colour                         |
 | ------------------------------------------- | ------------------------------ |

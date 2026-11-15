@@ -5,7 +5,7 @@ import { currentTheme, type KeeperStation } from "./theme";
 
 const { palette } = currentTheme;
 
-/** A keeper upright on her tail, facing the centre, with `held` in her right hand. */
+/** A keeper upright on her tail, facing the centre, with long hair and `held` in her right hand. */
 function Keeper(props: {
   readonly position: Vec3;
   readonly tail: string;
@@ -55,6 +55,10 @@ function Keeper(props: {
       </mesh>
       <mesh position={[0, 1.47, -0.015]}>
         <sphereGeometry args={[0.162, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
+        <meshStandardMaterial color={palette.hair} />
+      </mesh>
+      <mesh position={[0, 1.2, -0.1]}>
+        <cylinderGeometry args={[0.13, 0.17, 0.55, 12]} />
         <meshStandardMaterial color={palette.hair} />
       </mesh>
       <group position={[0.3, 0.86, 0.14]}>{props.held}</group>

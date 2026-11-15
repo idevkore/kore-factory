@@ -106,7 +106,7 @@ export const currentTheme: Theme = {
     stone: "#D3D6DA",
     stoneBand: "#2E4A7D",
     skin: "#C89B7B",
-    hair: "#2B211C",
+    hair: "#E2C27A",
     beard: "#C3C6C9",
     robe: "#2F8A6E",
     bronze: "#B08D57",
