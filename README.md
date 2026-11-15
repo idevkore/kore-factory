@@ -1,6 +1,6 @@
 # KORE Factory
 
-KORE Factory is a desktop harness for AI coding-agent sessions. Next to the usual list of sessions it has a second, visual view, the island, where each session is a robot: when an agent asks for approval or has a question, you approve, decline or answer it in place.
+KORE Factory is a desktop harness for AI coding-agent sessions. Next to the usual list of sessions it has a second, visual view, the island, where each session appears as a figure on the map: when an agent asks for approval or has a question, you approve, decline or answer it in place.
 
 ## Status
 
