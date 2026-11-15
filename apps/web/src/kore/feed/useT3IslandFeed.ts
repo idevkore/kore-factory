@@ -182,7 +182,7 @@ export function useT3IslandFeed(focusKey: string | null): IslandFeed {
   };
 
   return {
-    snapshot: { worldId: ISLAND_WORLD.id, worldTitle: ISLAND_WORLD.title, ready, sessions },
+    snapshot: { worldId: ISLAND_WORLD.id, ready, sessions },
     pending,
     pendingLoading: detailRef !== null && detail === null,
     resolve,

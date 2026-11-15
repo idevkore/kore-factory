@@ -20,7 +20,7 @@ function session(key: string, state: SessionState): IslandSession {
 }
 
 function snapshot(ready: boolean, sessions: ReadonlyArray<IslandSession>): IslandSnapshot {
-  return { worldId: "kore-hq", worldTitle: "KORE HQ", ready, sessions };
+  return { worldId: "kore-hq", ready, sessions };
 }
 
 describe("diffSnapshots", () => {

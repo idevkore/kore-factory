@@ -30,7 +30,6 @@ export interface IslandSession {
 
 export interface IslandSnapshot {
   readonly worldId: string;
-  readonly worldTitle: string;
   readonly ready: boolean; // false until the thread list has loaded
   readonly sessions: ReadonlyArray<IslandSession>;
 }
@@ -80,4 +79,4 @@ export type IslandEvent =
   | { type: "state_changed"; key: string; from: SessionState; to: SessionState }
   | { type: "station_changed"; key: string; from: StationId; to: StationId };
 
-export const ISLAND_WORLD = { id: "kore-hq", title: "KORE HQ" } as const;
+export const ISLAND_WORLD = { id: "kore-hq" } as const;
