@@ -24,7 +24,7 @@ function snapshot(ready: boolean, sessions: ReadonlyArray<IslandSession>): Islan
 }
 
 describe("diffSnapshots", () => {
-  it("throws no barrels for the sessions in the first ready snapshot", () => {
+  it("adds none of the sessions in the first ready snapshot", () => {
     const loaded = snapshot(true, [session("a", "working"), session("b", "idle")]);
     expect(diffSnapshots(null, loaded)).toEqual([]);
     expect(diffSnapshots(snapshot(false, []), loaded)).toEqual([]);
@@ -48,7 +48,7 @@ describe("diffSnapshots", () => {
     const after = snapshot(true, [session("a", "working"), session("b", "needs_approval")]);
     expect(diffSnapshots(before, after)).toEqual([
       { type: "state_changed", key: "a", from: "starting", to: "working" },
-      { type: "station_changed", key: "a", from: "crates", to: "anvil" },
+      { type: "station_changed", key: "a", from: "intake", to: "work" },
       { type: "state_changed", key: "b", from: "needs_answer", to: "needs_approval" },
     ]);
   });

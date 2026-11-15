@@ -42,14 +42,14 @@ describe("sessionStateOf", () => {
 
 describe("stationFor", () => {
   it.each<[SessionState, string]>([
-    ["starting", "crates"],
-    ["working", "anvil"],
-    ["needs_approval", "watchtower"],
-    ["needs_answer", "watchtower"],
-    ["idle", "command"],
-    ["done", "command"],
-    ["stopped", "command"],
-    ["failed", "command"],
+    ["starting", "intake"],
+    ["working", "work"],
+    ["needs_approval", "gate"],
+    ["needs_answer", "gate"],
+    ["idle", "home"],
+    ["done", "home"],
+    ["stopped", "home"],
+    ["failed", "home"],
   ])("puts %s at the %s", (state, station) => {
     expect(stationFor(state)).toBe(station);
   });

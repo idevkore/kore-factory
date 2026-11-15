@@ -5,7 +5,7 @@ import { DoubleSide, type Group } from "three";
 import type { IslandSession, SessionState } from "../core/contract";
 import {
   BARREL_FLIGHT_MS,
-  barrelPoint,
+  carrierPoint,
   COMMANDER_HAND,
   STATION_MOVE_MS,
   type Vec3,
@@ -134,7 +134,7 @@ export function Robot(props: {
       const startedAt = flightStartedAt.current ?? now;
       flightStartedAt.current = startedAt;
       const t = Math.min(1, ((now - startedAt) * 1000) / BARREL_FLIGHT_MS);
-      node.position.set(...barrelPoint(COMMANDER_HAND, target, t));
+      node.position.set(...carrierPoint(COMMANDER_HAND, target, t));
       if (t < 1) state.invalidate();
       return;
     }

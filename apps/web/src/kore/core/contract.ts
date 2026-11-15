@@ -8,7 +8,7 @@ export type SessionState =
   | "stopped" // interrupted | cancelled | rolled_back
   | "failed"; // failed
 
-export type StationId = "command" | "crates" | "anvil" | "watchtower";
+export type StationId = "home" | "intake" | "work" | "gate";
 
 export interface SessionRef {
   readonly environmentId: string;

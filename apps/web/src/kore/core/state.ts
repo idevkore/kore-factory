@@ -48,17 +48,17 @@ export function sessionStateOf(input: SessionStatusInput): SessionState {
 export function stationFor(state: SessionState): StationId {
   switch (state) {
     case "starting":
-      return "crates";
+      return "intake";
     case "working":
-      return "anvil";
+      return "work";
     case "needs_approval":
     case "needs_answer":
-      return "watchtower";
+      return "gate";
     case "idle":
     case "done":
     case "stopped":
     case "failed":
-      return "command";
+      return "home";
   }
 }
 
@@ -82,10 +82,10 @@ const STATE_LABELS: Record<SessionState, string> = {
 };
 
 const STATION_LABELS: Record<StationId, string> = {
-  command: "command dais",
-  crates: "crates",
-  anvil: "anvil",
-  watchtower: "watchtower",
+  home: "command dais",
+  intake: "crates",
+  work: "anvil",
+  gate: "watchtower",
 };
 
 export function stateLabel(state: SessionState): string {

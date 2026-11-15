@@ -1,5 +1,5 @@
 import type { StationId } from "../core/contract";
-import { ISLAND_SIZE, outwardFrom, STATION_POSITIONS, type Vec3 } from "../core/layout";
+import { GROUND_SIZE, outwardFrom, STATION_POSITIONS, type Vec3 } from "../core/layout";
 import { COLORS } from "./palette";
 
 function besideStation(station: StationId, distance: number, height = 0): Vec3 {
@@ -57,11 +57,11 @@ function IslandGround() {
   return (
     <group>
       <mesh position={[0, -0.5, 0]}>
-        <boxGeometry args={[ISLAND_SIZE, 1, ISLAND_SIZE]} />
+        <boxGeometry args={[GROUND_SIZE, 1, GROUND_SIZE]} />
         <meshStandardMaterial color={COLORS.stone} roughness={0.95} />
       </mesh>
       <mesh position={[0, -0.6, 0]}>
-        <boxGeometry args={[ISLAND_SIZE + 0.5, 1, ISLAND_SIZE + 0.5]} />
+        <boxGeometry args={[GROUND_SIZE + 0.5, 1, GROUND_SIZE + 0.5]} />
         <meshStandardMaterial color={COLORS.gold} metalness={0.6} roughness={0.35} />
       </mesh>
     </group>
@@ -69,7 +69,7 @@ function IslandGround() {
 }
 
 function CommandDais() {
-  const [x, , z] = STATION_POSITIONS.command;
+  const [x, , z] = STATION_POSITIONS.home;
   return (
     <group>
       <Figure position={[x, 1.2, z]} body={COLORS.steel} accent={COLORS.gold} scale={1.4} />
@@ -92,7 +92,7 @@ function CommandDais() {
 }
 
 function Anvil() {
-  const [x, , z] = STATION_POSITIONS.anvil;
+  const [x, , z] = STATION_POSITIONS.work;
   return (
     <group>
       <group position={[x, 0, z]}>
@@ -109,13 +109,13 @@ function Anvil() {
           <meshStandardMaterial color={COLORS.steel} metalness={0.7} roughness={0.4} />
         </mesh>
       </group>
-      <Figure position={besideStation("anvil", 1.4)} body={COLORS.grey} accent={COLORS.dimGold} />
+      <Figure position={besideStation("work", 1.4)} body={COLORS.grey} accent={COLORS.dimGold} />
     </group>
   );
 }
 
 function Crates() {
-  const [cx, , cz] = besideStation("crates", 0.3);
+  const [cx, , cz] = besideStation("intake", 0.3);
   const crates: ReadonlyArray<{ readonly at: Vec3; readonly size: number }> = [
     { at: [cx - 0.5, 0.45, cz], size: 0.9 },
     { at: [cx + 0.5, 0.45, cz + 0.1], size: 0.9 },
@@ -130,13 +130,13 @@ function Crates() {
           <meshStandardMaterial color={COLORS.wood} />
         </mesh>
       ))}
-      <Figure position={besideStation("crates", 1.6)} body={COLORS.grey} accent={COLORS.dimGold} />
+      <Figure position={besideStation("intake", 1.6)} body={COLORS.grey} accent={COLORS.dimGold} />
     </group>
   );
 }
 
 function Watchtower() {
-  const [x, , z] = STATION_POSITIONS.watchtower;
+  const [x, , z] = STATION_POSITIONS.gate;
   const legs: ReadonlyArray<readonly [number, number]> = [
     [-0.6, -0.6],
     [0.6, -0.6],

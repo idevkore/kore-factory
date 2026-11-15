@@ -2,27 +2,27 @@ import type { IslandSession, StationId } from "./contract";
 
 export type Vec3 = readonly [number, number, number];
 
-export const ISLAND_SIZE = 20;
+export const GROUND_SIZE = 20;
 export const BARREL_FLIGHT_MS = 1200;
 export const STATION_MOVE_MS = 800;
-const ISLAND_EDGE = ISLAND_SIZE / 2 - 0.6;
+const GROUND_EDGE = GROUND_SIZE / 2 - 0.6;
 
 export const STATION_POSITIONS: Record<StationId, Vec3> = {
-  command: [-5, 0, -5],
-  anvil: [5, 0, 0],
-  crates: [2, 0, 6],
-  watchtower: [6, 0, -6],
+  home: [-5, 0, -5],
+  work: [5, 0, 0],
+  intake: [2, 0, 6],
+  gate: [6, 0, -6],
 };
 
-/** Where barrels leave from: the commander's hand on top of the dais. */
+/** Where carriers leave from: the commander's hand above the home station. */
 export const COMMANDER_HAND: Vec3 = [-5, 2.3, -5];
 
-/** Distance from a station's centre to its first ring of slots, clear of its props. */
+/** Distance from a station's centre to its first ring of slots, clear of its shape. */
 const FIRST_RING: Record<StationId, number> = {
-  command: 3,
-  anvil: 2.2,
-  crates: 2.4,
-  watchtower: 2.2,
+  home: 3,
+  work: 2.2,
+  intake: 2.4,
+  gate: 2.2,
 };
 const RING_GAP = 1.2;
 const SLOT_SPACING = 1.15;
@@ -31,21 +31,21 @@ function ringCapacity(radius: number): number {
   return Math.floor((2 * Math.PI * radius) / SLOT_SPACING);
 }
 
-/** The unit vector in the ground plane from `station` away from the island's centre. */
+/** The unit vector in the ground plane from `station` away from the ground's centre. */
 export function outwardFrom(station: StationId): readonly [number, number] {
   const [x, , z] = STATION_POSITIONS[station];
   const length = Math.hypot(x, z);
   return [x / length, z / length];
 }
 
-function clampToIsland(value: number): number {
-  return Math.min(ISLAND_EDGE, Math.max(-ISLAND_EDGE, value));
+function clampToGround(value: number): number {
+  return Math.min(GROUND_EDGE, Math.max(-GROUND_EDGE, value));
 }
 
 /**
- * The ground spot for the `index`th of `count` robots at `station`. Robots
+ * The ground spot for the `index`th of `count` figures at `station`. Figures
  * fill rings around the station, each ring's group centred on the side that
- * faces the island's centre.
+ * faces the ground's centre.
  */
 export function slotPosition(station: StationId, index: number, count: number): Vec3 {
   const total = Math.max(count, index + 1);
@@ -63,9 +63,9 @@ export function slotPosition(station: StationId, index: number, count: number): 
   const angle = towardCentre + (index - ringStart - (inRing - 1) / 2) * ((2 * Math.PI) / capacity);
   const [x, , z] = STATION_POSITIONS[station];
   return [
-    clampToIsland(x + radius * Math.cos(angle)),
+    clampToGround(x + radius * Math.cos(angle)),
     0,
-    clampToIsland(z + radius * Math.sin(angle)),
+    clampToGround(z + radius * Math.sin(angle)),
   ];
 }
 
@@ -89,8 +89,8 @@ export function layoutSessions(sessions: ReadonlyArray<IslandSession>): Map<stri
   return positions;
 }
 
-/** A point on the barrel's arc: a quadratic Bézier from `from` to `to`, raised in the middle. */
-export function barrelPoint(from: Vec3, to: Vec3, t: number): Vec3 {
+/** A point on the carrier's arc: a quadratic Bézier from `from` to `to`, raised in the middle. */
+export function carrierPoint(from: Vec3, to: Vec3, t: number): Vec3 {
   const rise = 3 + Math.hypot(to[0] - from[0], to[2] - from[2]) * 0.25;
   const control: Vec3 = [
     (from[0] + to[0]) / 2,
