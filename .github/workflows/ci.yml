@@ -27,9 +27,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # Leave out the vendored repos under .repos/ (their nested gitlinks
-          # have no .gitmodules entry, which breaks checkout's cleanup) and
-          # mobile's prebuilt binaries, as upstream's CI does.
+          # Leave out the vendored reference repos under .repos/ and mobile's
+          # prebuilt binaries, as upstream's CI does; no check reads them.
           sparse-checkout: |
             /*
             !/.repos/
