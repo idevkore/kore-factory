@@ -81,19 +81,8 @@ const STATE_LABELS: Record<SessionState, string> = {
   failed: "Failed",
 };
 
-const STATION_LABELS: Record<StationId, string> = {
-  home: "command dais",
-  intake: "crates",
-  work: "anvil",
-  gate: "watchtower",
-};
-
 export function stateLabel(state: SessionState): string {
   return STATE_LABELS[state];
-}
-
-export function stationLabel(station: StationId): string {
-  return STATION_LABELS[station];
 }
 
 /** "under 1m", "4m", "2h 5m", "3d": how long ago `sinceIso` was at `nowMs`. */

@@ -3,11 +3,13 @@ import { Button } from "../../components/ui/button";
 import { Kbd } from "../../components/ui/kbd";
 import type { IslandSession, IslandSnapshot, PendingRequest, Resolution } from "../core/contract";
 import { waitingSessions } from "../core/navigation";
-import { formatWaited, needsYou, stateLabel, stationLabel } from "../core/state";
+import { formatWaited, needsYou, stateLabel } from "../core/state";
 import { RequestForm } from "./RequestForm";
+import type { IslandWording } from "./wording";
 
 function FocusedSession(props: {
   readonly session: IslandSession;
+  readonly stationLabel: string;
   readonly nowMs: number;
   readonly pending: PendingRequest | null;
   readonly pendingLoading: boolean;
@@ -33,7 +35,7 @@ function FocusedSession(props: {
         <h2 className="font-medium text-sm">{session.title}</h2>
         <p className="text-muted-foreground text-xs">{session.projectTitle}</p>
         <p className="text-xs">
-          {stateLabel(session.state)}, at the {stationLabel(session.station)}
+          {stateLabel(session.state)}, at the {props.stationLabel}
           {session.waitingSince === null
             ? null
             : `, waiting ${formatWaited(session.waitingSince, props.nowMs)}`}
@@ -49,6 +51,7 @@ function FocusedSession(props: {
 
 export function IslandHud(props: {
   readonly snapshot: IslandSnapshot;
+  readonly wording: IslandWording;
   readonly nowMs: number;
   readonly focused: IslandSession | null;
   readonly pending: PendingRequest | null;
@@ -70,7 +73,7 @@ export function IslandHud(props: {
       className="absolute inset-y-0 right-0 flex w-96 max-w-full flex-col gap-6 overflow-y-auto border-l bg-background/95 p-4"
     >
       <header className="flex items-baseline justify-between gap-3">
-        <h1 className="font-semibold text-base">{snapshot.worldTitle}</h1>
+        <h1 className="font-semibold text-base">{props.wording.worldName}</h1>
         <p className="text-muted-foreground text-xs">
           Working {working} · Needs you {waiting.length}
         </p>
@@ -109,11 +112,12 @@ export function IslandHud(props: {
 
       {focused === null ? (
         <p className="text-muted-foreground text-sm">
-          Click a robot, or press N for the next session waiting on you.
+          Click a {props.wording.nouns.figure}, or press N for the next session waiting on you.
         </p>
       ) : (
         <FocusedSession
           session={focused}
+          stationLabel={props.wording.stationLabels[focused.station]}
           nowMs={props.nowMs}
           pending={props.pending}
           pendingLoading={props.pendingLoading}

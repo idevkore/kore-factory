@@ -3,8 +3,6 @@ import type { IslandSession, StationId } from "./contract";
 export type Vec3 = readonly [number, number, number];
 
 export const GROUND_SIZE = 20;
-export const BARREL_FLIGHT_MS = 1200;
-export const STATION_MOVE_MS = 800;
 const GROUND_EDGE = GROUND_SIZE / 2 - 0.6;
 
 export const STATION_POSITIONS: Record<StationId, Vec3> = {
@@ -36,6 +34,18 @@ export function outwardFrom(station: StationId): readonly [number, number] {
   const [x, , z] = STATION_POSITIONS[station];
   const length = Math.hypot(x, z);
   return [x / length, z / length];
+}
+
+/** A ground point `distance` out from `station`, away from the centre, at `height`. */
+export function besideStation(station: StationId, distance: number, height = 0): Vec3 {
+  const [x, , z] = STATION_POSITIONS[station];
+  const [outX, outZ] = outwardFrom(station);
+  return [x + outX * distance, height, z + outZ * distance];
+}
+
+/** The turn about the vertical axis that faces something standing at `from` towards the centre. */
+export function facingCentre(from: Vec3): number {
+  return Math.atan2(-from[0], -from[2]);
 }
 
 function clampToGround(value: number): number {
