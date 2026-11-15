@@ -30,7 +30,7 @@ function ringCapacity(radius: number): number {
 }
 
 /** The unit vector in the ground plane from `station` away from the ground's centre. */
-export function outwardFrom(station: StationId): readonly [number, number] {
+function outwardFrom(station: StationId): readonly [number, number] {
   const [x, , z] = STATION_POSITIONS[station];
   const length = Math.hypot(x, z);
   return [x / length, z / length];
