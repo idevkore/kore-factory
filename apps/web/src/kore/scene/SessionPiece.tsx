@@ -47,6 +47,7 @@ export function SessionPiece(props: {
   const group = useRef<Group>(null);
   const motion = useRef<Motion | null>(null);
   const flightStartedAt = useRef<number | null>(null);
+  const flightProgress = useRef(0);
   const slot = useRef<Vec3 | null>(null);
   const invalidate = useThree((state) => state.invalidate);
 
@@ -65,6 +66,7 @@ export function SessionPiece(props: {
       const startedAt = flightStartedAt.current ?? now;
       flightStartedAt.current = startedAt;
       const t = Math.min(1, ((now - startedAt) * 1000) / carrierFlightMs);
+      flightProgress.current = t;
       node.position.set(...carrierPoint(COMMANDER_HAND, target, t));
       if (t < 1) state.invalidate();
       return;
@@ -99,7 +101,7 @@ export function SessionPiece(props: {
 
   return (
     <group ref={group} onClick={focus}>
-      {inFlight ? <Carrier /> : <SessionFigure state={session.state} />}
+      {inFlight ? <Carrier progress={flightProgress} /> : <SessionFigure state={session.state} />}
       {!inFlight && needsYou(session.state) ? <Marker /> : null}
       {!inFlight && props.focused ? <FocusRing /> : null}
       <mesh position={[0, 0.7, 0]}>

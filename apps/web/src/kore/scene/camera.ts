@@ -4,12 +4,14 @@ const VIEW_DIRECTION = new Vector3(14, 16, 22).normalize();
 const VIEW_TARGET = new Vector3(1.2, 0, 2);
 const MARGIN_PX = 24;
 const RIM = 10.25;
-/** The ground's corners, rim included, and the top of the tallest station shape. */
+/** The ground's corners, rim included, and the tops of the tallest station shapes. */
 const FIT_POINTS = [
   ...[0, -1.1].flatMap((y) =>
     [-RIM, RIM].flatMap((x) => [-RIM, RIM].map((z) => new Vector3(x, y, z))),
   ),
-  new Vector3(6, 6.4, -6),
+  new Vector3(6, 4.4, -6),
+  new Vector3(-4.84, 4.55, -7.6),
+  new Vector3(-7.6, 4.55, -4.84),
 ];
 const scratch = new Vector3();
 
