@@ -25,6 +25,7 @@ Our own code lives in new files: `apps/web/src/kore/`, `apps/web/src/routes/_cha
 | `.github/` (templates, `SECURITY.md`, `CODEOWNERS`)    | Our issue and PR templates and security policy. Upstream's `.github/actions` and most `.github/scripts` are deleted; `scripts/ci-changes.cjs` and `triage/PLAYBOOK.md` stay because code reads them. |
 | `knip.jsonc`                                           | Lists three release scripts that only the deleted workflows called, so knip does not flag them.                                                                                                      |
 | `.repos/alchemy-effect/submodules/distilled`, `floci`  | Deleted: gitlinks with no `.gitmodules` entry that broke every `git submodule` command, including CI checkout.                                                                                       |
+| `apps/web/src/components/CommandPalette.tsx`           | Adds the "Open island" action, the way into `/island` without typing its URL.                                                                                                                        |
 
 ## Taking a new upstream release
 

@@ -9,7 +9,7 @@ Notes for developing KORE Factory on the T3 Code base at tag `v0.1.9`. Everythin
 - Product analytics are off unless `T3CODE_TELEMETRY_ENABLED=true`.
 - The app is named "KORE Factory" in the two central constants; the tab title reads "KORE Factory (Dev)".
 - `/island` renders a React Three Fiber canvas with a WebGL2 context.
-- A run against the Claude provider is still to be recorded.
+- Runs against the Claude provider are recorded under [Claude provider](#claude-provider): one approval accepted, one declined with a note.
 
 ## Versions
 
@@ -88,7 +88,7 @@ vp run dev:desktop --home-dir "$PWD/.t3/desktop-home" --no-seed
 
 ## Event record
 
-Recorded in the web client by wrapping `MessageEvent.prototype.data` and `WebSocket.prototype.send` for the `/ws` socket, using T3's `Replay (dev)` provider. Replay is an ACP agent (`apps/server/scripts/dev-replay-agent.ts`) that runs through the ACP adapter, not the Claude adapter. The orchestration events and the client side are the ones a Claude thread uses, but the Claude-specific payloads are **unverified** until a run against the Claude provider is recorded.
+Recorded in the web client by wrapping `MessageEvent.prototype.data` and `WebSocket.prototype.send` for the `/ws` socket, using T3's `Replay (dev)` provider. Replay is an ACP agent (`apps/server/scripts/dev-replay-agent.ts`) that runs through the ACP adapter, not the Claude adapter. The orchestration events and the client side are the ones a Claude thread uses; what the Claude provider itself sends is under [Claude provider](#claude-provider).
 
 The wire is Effect RPC over WebSocket, in JSON text frames:
 
@@ -146,13 +146,26 @@ Shape of the approval request (ids shortened):
 }
 ```
 
-The approval card has no tool name or tool input of its own. The tool call is the sibling `command_execution` item (`input` holds the command, `title` "Ran command"). The two share `nativeItemRef.nativeId`; whether that holds for Claude is **unverified**.
+The approval card has no tool name or tool input of its own. The tool call is the sibling `command_execution` item (`input` holds the command, `title` "Ran command"). The two share `nativeItemRef.nativeId`, and they do for Claude too.
 
 ### Question flow (scenario "Question")
 
 - **Request.** `runtime-request.updated` with `kind:"user_input"` and status `pending`, and `turn-item.updated` with `type:"user_input_request"`, `requestId` and `questions:[{id:"schema_vs_ui_flexibility", header:"Fixture", question:"Should this fixture prefer strict schemas or UI flexibility?", options:[{label, description, value}], allowCustomAnswer:false}]`. The shell's `pendingRuntimeRequest.kind` is `user_input`. The UI shows "Needs your input".
 - **Answer.** Picking a single-select option sends it at once: `orchestration.dispatchCommand` with `{type:"runtime-request.respond", commandId, threadId, requestId, answers:{"schema_vs_ui_flexibility":"Strict schemas (Recommended)"}}`.
 - **Then** `runtime-request.updated` (resolved), `turn-item.updated` (`user_input_request` completed), and the same completion sequence as the approval flow.
+
+### Claude provider
+
+Recorded the same way with Claude Haiku 5.5 in Supervised mode, on two prompts: "Create a file hello.txt containing the word hi." (approved) and "Create a file bye.txt containing the word bye." (declined with a note). `orchestration.launchThread` carried `runtimeMode:"approval-required"` and `modelSelection:{instanceId:"claudeAgent", model:"claude-haiku-5-5"}`.
+
+- **Driver.** Events and native refs carry `driver: "claudeAgent"`. Native refs are `strength: "strong"` (Replay's are `weak`), and `nativeId` is Claude's tool-use id (`toolu_…`).
+- **Request.** A shell command arrives as `runtime-request.updated` with `kind: "command"`, `status: "pending"` and `responseCapability: {type: "live", providerSessionId, supportsFeedback: true}`. Replay's live capability has no `supportsFeedback`, and the orchestrator refuses `feedback` without it (`apps/server/src/orchestration-v2/Orchestrator.ts:9667`). So a deny note is accepted for Claude and not for Replay, and the island's `acceptsNote` is true for Claude.
+- **Approval item.** `turn-item.updated` with `type: "approval_request"`, `requestKind: "command"`, `prompt` holding the full shell command, `title: null` and `status: "waiting"`. Its `nativeItemRef` equals that of the sibling `command_execution` item, so the approval and its tool call share `nativeItemRef.nativeId`, as with Replay.
+- **Tool-call item.** `command_execution` with `input` holding the command and `title: null`. Its status is `running` while the approval waits; Replay's is `pending`.
+- **Accept** (`decision: "accept"`). The request becomes `resolved` with `decision: "accept"` and `resolvedAt` set. The command runs, and the run goes `waiting`, then `completed`.
+- **Decline with a note** (`decision: "decline"`, `feedback`). The request becomes `resolved` with `decision: "decline"` and the `feedback` text. The `approval_request` item ends `cancelled` (not `completed`) and the `command_execution` item `failed`. The thread view shows the note as a user message; Claude replies that it did not run the command, and the run ends `completed` without retrying.
+- **Titles.** A generated title replaces the prompt-derived one a few seconds into the run, as with Replay.
+- **Launch.** A thread started from the composer can show in the shell for a moment with no run (`idle`) before `preparing`.
 
 ## Findings for building the island
 
