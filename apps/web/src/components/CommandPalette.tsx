@@ -1651,7 +1651,7 @@ function OpenCommandPaletteDialog(props: {
   actionItems.push({
     kind: "action",
     value: "action:island",
-    searchTerms: ["island", "robots", "sessions", "waiting", "approvals", "kore"],
+    searchTerms: ["island", "seahorses", "sessions", "waiting", "approvals", "kore"],
     title: "Open island",
     icon: <WavesIcon className={ITEM_ICON_CLASS} />,
     run: async () => {
