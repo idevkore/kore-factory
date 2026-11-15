@@ -24,6 +24,7 @@ Our own code lives in new files: `apps/web/src/kore/`, `apps/web/src/routes/_cha
 | `.github/workflows/ci.yml`                             | Replaced by one pinned, read-only check job. Every other upstream workflow is deleted.                                                                                                               |
 | `.github/` (templates, `SECURITY.md`, `CODEOWNERS`)    | Our issue and PR templates and security policy. Upstream's `.github/actions` and most `.github/scripts` are deleted; `scripts/ci-changes.cjs` and `triage/PLAYBOOK.md` stay because code reads them. |
 | `knip.jsonc`                                           | Lists three release scripts that only the deleted workflows called, so knip does not flag them.                                                                                                      |
+| `.repos/alchemy-effect/submodules/distilled`, `floci`  | Deleted: gitlinks with no `.gitmodules` entry that broke every `git submodule` command, including CI checkout.                                                                                       |
 
 ## Taking a new upstream release
 
@@ -49,7 +50,7 @@ Keep git's own message (`Merge tag 'vX.Y.Z' into develop`). Resolve conflicts th
 
 - `apps/web/src/routeTree.gen.ts`: take upstream's version, then run the web dev server or build once so the plugin regenerates it with `/island`.
 - `pnpm-lock.yaml`: take upstream's version, then run `pnpm install` so our three packages are added back, and commit the result.
-- Upstream workflows, `.github/actions` and `.github/scripts` we deleted: keep them deleted (`git rm` the file again). Never bring back a workflow that publishes, deploys or uses secrets.
+- Upstream workflows, `.github/actions`, `.github/scripts` and the two `.repos` gitlinks we deleted: keep them deleted (`git rm` the file again). Never bring back a workflow that publishes, deploys or uses secrets.
 - The files in the table above: keep upstream's change and re-apply ours on top. Update this table if a change moves or goes away.
 
 Then install, run `vp run check:changed`, start the app once, open `/island`, and fix anything before merging `develop` into `main`.
