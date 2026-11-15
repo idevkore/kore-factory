@@ -1,6 +1,6 @@
 # The island
 
-`/island` shows every recent session (a T3 thread) as a figure on one island, "KORE HQ". Where a figure stands and how it looks follow the session's real state, and a side panel answers the session's open approval or question in place. Open it from the command palette ("Open island") or at `/island`.
+`/island` shows every recent session (a T3 thread) as a figure on one island, "KORE Atoll". Where a figure stands and how it looks follow the session's real state, and a side panel answers the session's open approval or question in place. Open it from the command palette ("Open island") or at `/island`.
 
 ## Sessions, stations and figures
 
@@ -48,7 +48,7 @@ All island code is in `apps/web/src/kore/`, in four folders whose imports run on
 
 - `core/`: plain TypeScript with no React, three.js or app imports. The contract types, the state and station mapping, the visibility rule, slot layout, the next-waiting order and the snapshot diff, with unit tests beside each file.
 - `feed/`: the only code that knows T3. `useT3IslandFeed(focusKey)` turns thread shells and projects into the contract's snapshot, reads the focused session's pending request, and answers it.
-- `scene/`: the React Three Fiber scene. Imports `core/` only, plus React and three.js. Its role components are `Ground`, `StationShapes`, `CommanderFigure`, `KeeperFigures`, `SessionFigure`, `Carrier` and `Marker`; `SessionPiece` moves a session's carrier or figure to its slot.
+- `scene/`: the React Three Fiber scene. Imports `core/` only, plus React and three.js. Its role components are `Ground`, `StationShapes`, `CommanderFigure`, `KeeperFigures`, `SessionFigure`, `Carrier`, `Marker` and `Scenery` (decoration nothing reads); `SessionPiece` moves a session's carrier or figure to its slot.
 - `hud/`: the DOM panel, the text mirror and the keys. Imports `core/` only, plus React and the app's `components/ui`.
 
 `IslandPage.tsx` wires the feed to the scene and the panel and times the carriers' flights. The route is `apps/web/src/routes/_chat.island.tsx`.
@@ -59,14 +59,33 @@ A theme is `scene/theme.ts` plus the role components in `scene/`. `currentTheme`
 
 ### Current theme
 
-Grey-box shapes on a square stone ground with a gold rim, on `#0A0B0E`. Home is a stepped command dais with the commander on top, work is an anvil, intake is a pile of crates and the gate is a watchtower with its keeper on the lookout. Sessions are small robots: gold when working or waiting on the user, dim gold when starting, green when done, grey when idle or stopped, and dark with a red band when failed. New sessions arrive as barrels, and the marker is a tall red totem (`#EF4444`).
+An atoll on a deep-sea background (`#071621`): open sea (`#0F4C68`) on the square ground, then a ring of reef (`#B98A78`) and sand (`#E6DCC3`) round a calm lagoon (`#1F6F95`) in the middle. Every shape is a flat-coloured primitive.
+
+- **Temple steps (home):** a small temple of pale stone with three steps, four columns and a pediment behind, on a gold band. The commander stands on the top step: a bearded god in a sea-green robe, on his own legs, holding a bronze trident.
+- **Kelp shallows (intake):** a pool of shallow water with kelp stalks. Its keeper is a mermaid with a sea-glass tail and a woven basket.
+- **Coral forge (work):** an anvil-shaped coral rock. Its keeper is a mermaid with a copper tail and a hammer.
+- **Lighthouse (gate):** a short striped lighthouse on rocks, its lamp lit. Its keeper, a mermaid with a blue tail, waits at its foot with a lantern.
+
+The three mermaids are told apart by tail and what they hold; each has dark hair and a pale chest wrap. Sessions are upright seahorses, side on to the camera, in the state colours:
+
+| State                                       | Colour                         |
+| ------------------------------------------- | ------------------------------ |
+| `working`, `needs_approval`, `needs_answer` | gold `#D4AF37`                 |
+| `starting`                                  | dim gold `#8C7728`             |
+| `done`                                      | green `#10B981`                |
+| `idle`, `stopped`                           | slate `#7D8A9C`                |
+| `failed`                                    | dark `#1F2329` with a red band |
+
+New sessions arrive as a clam sent from the commander's trident, which opens as it lands. A session that needs you has a red buoy (`#EF4444`) beside it. The focus ring is gold.
+
+The sea life is decoration and never moves: a sea turtle by the kelp shallows, an octopus on a rock by the coral forge, a seal on the lighthouse rocks, a small school of fish over the lagoon, three jellyfish in the open sea and a few starfish on the sand.
 
 ## Left out
 
 - More than one island, the rail of worlds, and grouping projects into worlds.
 - Token and cost counters, a simulated feed, sound.
 - Camera controls or presets: the view is fixed and fits the whole island.
-- Model files and art: every shape is a box, cylinder, sphere or cone.
+- Model files, textures and art: every shape is a three.js primitive with a flat colour.
 - Attachments in question answers and dismissing a question; both remain in the thread view.
 - Separate handling for subagent threads: each shows as its own figure.
 
