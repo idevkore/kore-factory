@@ -1,41 +1,25 @@
 name: Bug report
-description: Report broken behavior, regressions, crashes, or reliability issues.
-title: "[Bug]: "
+description: Something in KORE Factory is broken or does not work as described.
 labels:
   - bug
-  - needs-triage
 body:
   - type: markdown
     attributes:
       value: |
-        Use this form for broken behavior, regressions, crashes, or reliability problems.
-        Feature requests belong in [Discussions](https://github.com/pingdotgg/t3code/discussions/categories/ideas).
-        Search existing issues first and keep the report focused on one problem.
+        Do not paste API keys, tokens, passwords or private project content (code, prompts, transcripts, file paths) into this form. Redact logs before you share them.
+        Report security problems privately through the Security tab, not here. See SECURITY.md in the .github folder.
 
-  - type: checkboxes
-    id: checks
+  - type: textarea
+    id: what-happened
     attributes:
-      label: Before submitting
-      options:
-        - label: I searched existing issues and did not find a duplicate.
-          required: true
-        - label: I included enough detail to reproduce or investigate the problem.
-          required: true
+      label: What happened
+    validations:
+      required: true
 
-  - type: dropdown
-    id: area
+  - type: textarea
+    id: expected
     attributes:
-      label: Area
-      description: Which part of the project is affected?
-      options:
-        - apps/web
-        - apps/server
-        - apps/desktop
-        - apps/mobile
-        - packages/contracts or packages/shared
-        - Build, CI, or release tooling
-        - Docs
-        - Not sure
+      label: What you expected
     validations:
       required: true
 
@@ -43,41 +27,10 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
-      description: Provide a minimal, deterministic repro.
       placeholder: |
-        1. Start the app with ...
-        2. Open ...
-        3. Disconnect the network
-        4. Reconnect and send another prompt
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected behavior
-      placeholder: The thread should resume normally and accept the new message.
-    validations:
-      required: true
-
-  - type: textarea
-    id: actual
-    attributes:
-      label: Actual behavior
-      placeholder: The composer clears, no new turn starts, and the session stays in a pending state.
-    validations:
-      required: true
-
-  - type: dropdown
-    id: impact
-    attributes:
-      label: Impact
-      description: How bad is this in practice?
-      options:
-        - Blocks work completely
-        - Major degradation or frequent failure
-        - Minor bug or occasional failure
-        - Cosmetic issue
+        1. Open ...
+        2. Start a session with ...
+        3. ...
     validations:
       required: true
 
@@ -85,35 +38,14 @@ body:
     id: version
     attributes:
       label: Version or commit
-      description: Release version, commit SHA, or branch name if known.
-      placeholder: main @ abc1234
+      description: The commit SHA or branch you ran.
+    validations:
+      required: true
 
   - type: input
-    id: environment
+    id: os
     attributes:
-      label: Environment
-      description: OS, browser or desktop app version, Node/Bun version, provider/model if relevant.
-      placeholder: macOS 15.3, Chrome 135, Bun 1.3.9, Codex app-server ...
-
-  - type: textarea
-    id: logs
-    attributes:
-      label: Logs or stack traces
-      description: Paste the most relevant output only. Redact secrets.
-      render: shell
-
-  - type: upload
-    id: attachments
-    attributes:
-      label: Screenshots, recordings, or supporting files
-      description: Upload screenshots, short recordings, repro archives, or log files. Redact secrets before uploading.
+      label: Operating system
+      placeholder: macOS 26.1
     validations:
-      required: false
-      accept: ".png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.mov,.webm,.log,.txt,.json,.zip"
-
-  - type: textarea
-    id: workaround
-    attributes:
-      label: Workaround
-      description: If you found a temporary workaround, include it.
-      placeholder: Restarting the provider session clears the stuck state.
+      required: true
