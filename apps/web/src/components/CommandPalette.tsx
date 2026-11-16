@@ -77,6 +77,7 @@ import {
   PlugIcon,
   SquarePenIcon,
   TextSearchIcon,
+  WavesIcon,
   UserPlusIcon,
 } from "lucide-react";
 import { openThreadFind } from "./chat/threadFindStore";
@@ -1644,6 +1645,17 @@ function OpenCommandPaletteDialog(props: {
     shortcutCommand: "usage.open",
     run: async () => {
       await navigate({ to: "/usage" });
+    },
+  });
+
+  actionItems.push({
+    kind: "action",
+    value: "action:island",
+    searchTerms: ["island", "seahorses", "sessions", "waiting", "approvals", "kore"],
+    title: "Open island",
+    icon: <WavesIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await navigate({ to: "/island" });
     },
   });
 
