@@ -31,9 +31,10 @@ function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
+/** False, so motion is allowed, where the window has no `matchMedia`. */
 function prefersReducedMotion(element: HTMLElement): boolean {
   return (
-    element.ownerDocument.defaultView?.matchMedia("(prefers-reduced-motion: reduce)").matches ??
+    element.ownerDocument.defaultView?.matchMedia?.("(prefers-reduced-motion: reduce)").matches ??
     false
   );
 }
