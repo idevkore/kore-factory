@@ -3,9 +3,10 @@ import { useEffect, useEffectEvent, useState } from "react";
 
 import { SidebarInset } from "../components/ui/sidebar";
 import { useNowMinute } from "../hooks/useNowMinute";
-import type { CameraPreset, IslandSession, IslandWorld } from "./core/contract";
+import type { CameraPreset, IslandFeed, IslandSession, IslandWorld } from "./core/contract";
 import { diffSnapshots } from "./core/diff";
 import { nextWaitingAcrossWorlds } from "./core/worlds";
+import { useSimulatedIslandFeed } from "./feed/useSimulatedIslandFeed";
 import { useT3IslandFeed } from "./feed/useT3IslandFeed";
 import { IslandHud } from "./hud/IslandHud";
 import { IslandMirror } from "./hud/IslandMirror";
@@ -88,12 +89,35 @@ function resolveActiveWorld(
   );
 }
 
+interface IslandViewProps {
+  readonly feed: IslandFeed;
+  readonly focusKey: string | null;
+  readonly setFocusKey: (key: string | null) => void;
+  readonly simulated: boolean;
+}
+
+function LiveIsland() {
+  const [focusKey, setFocusKey] = useState<string | null>(null);
+  const feed = useT3IslandFeed(focusKey, currentTheme.worldName);
+  return <IslandView feed={feed} focusKey={focusKey} setFocusKey={setFocusKey} simulated={false} />;
+}
+
+function SimulatedIsland() {
+  const [focusKey, setFocusKey] = useState<string | null>(null);
+  const feed = useSimulatedIslandFeed(focusKey, currentTheme.worldName);
+  return <IslandView feed={feed} focusKey={focusKey} setFocusKey={setFocusKey} simulated />;
+}
+
+/** `?feed=sim` shows made-up sessions in place of real ones. */
 export function IslandPage() {
   const search = useSearch({ from: "/_chat/island" });
+  return search.feed === "sim" ? <SimulatedIsland /> : <LiveIsland />;
+}
+
+function IslandView({ feed, focusKey, setFocusKey, simulated }: IslandViewProps) {
+  const search = useSearch({ from: "/_chat/island" });
   const navigate = useNavigate({ from: "/island" });
-  const [focusKey, setFocusKey] = useState<string | null>(null);
   const [camera, setCamera] = useState<CameraPreset>("overview");
-  const feed = useT3IslandFeed(focusKey, currentTheme.worldName);
   const nowMs = Date.parse(`${useNowMinute()}Z`);
   const { worlds, ready } = feed.snapshot;
   const activeWorld = resolveActiveWorld(worlds, search.world);
@@ -184,6 +208,14 @@ export function IslandPage() {
           onOpenInConsole={feed.openInConsole}
         />
         <IslandMirror sessions={sessions} flights={flights} wording={currentTheme} />
+        {simulated && (
+          <div
+            className="pointer-events-none absolute right-[396px] top-16 rounded-md border bg-background/95 px-2 py-1 font-medium text-muted-foreground text-xs"
+            data-testid="kore-island-simulated"
+          >
+            Simulated sessions
+          </div>
+        )}
         {[...flights].map((key) => (
           <CarrierLanding key={key} sessionKey={key} onLand={land} />
         ))}
