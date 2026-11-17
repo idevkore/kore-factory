@@ -217,6 +217,10 @@ overrides:
   # asks for ^0.16.0 but calls only renderToString, in mathHtml, which remark-math
   # never loads. 0.19.1 is the copy the web renders with.
   "katex@>=0.11.0 <0.18.2": 0.19.1
+  # GHSA-mrhx-c7xc-m3w5 (unbounded array issues): @vercel/config asks for ^3.22.0, which
+  # has no fixed release. Its one schema, a cron validator of five regex strings, behaves
+  # the same on 4.6.7, the copy the rest of the repo uses.
+  "@vercel/config>zod@<4.6.6": 4.6.7
 
 packageExtensions:
   "@clerk/expo@*":
