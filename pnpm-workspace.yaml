@@ -204,6 +204,11 @@ overrides:
   vite: "catalog:"
   vite-plus: "catalog:"
   yaml: "catalog:"
+  # Security fixes for transitive dependencies. Each key matches only the advisory's
+  # vulnerable range, so other copies of the package stay where they are.
+  # GHSA-9wv6-86v2-598j (ReDoS): @vercel/routing-utils pins 6.1.0 and already
+  # compares it against 6.3.0 at runtime.
+  "path-to-regexp@>=4.0.0 <6.3.0": 6.3.0
 
 packageExtensions:
   "@clerk/expo@*":
