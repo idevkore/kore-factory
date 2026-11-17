@@ -2387,7 +2387,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))(
       schemaVersion: 1,
       organization: "Example Corp",
       settings: {
-        defaultRuntimeMode: { value: "approval-required", locked: false },
+        defaultRuntimeMode: { value: "full-access", locked: false },
         enableAgentDeviceAccess: { value: false, locked: true },
       },
     };
@@ -2398,15 +2398,15 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))(
         const config = yield* ServerConfig.ServerConfig;
         const fs = yield* FileSystem.FileSystem;
 
-        assert.equal((yield* service.getSettings).defaultRuntimeMode, "approval-required");
+        assert.equal((yield* service.getSettings).defaultRuntimeMode, "full-access");
 
         // The built-in default differs from the policy's, so choosing it must persist.
-        yield* service.updateSettings({ defaultRuntimeMode: "full-access" });
-        assert.equal((yield* service.getSettings).defaultRuntimeMode, "full-access");
-        assert.include(yield* fs.readFileString(config.settingsPath), '"full-access"');
+        yield* service.updateSettings({ defaultRuntimeMode: "approval-required" });
+        assert.equal((yield* service.getSettings).defaultRuntimeMode, "approval-required");
+        assert.include(yield* fs.readFileString(config.settingsPath), '"approval-required"');
 
         // Choosing the policy's value leaves nothing in the file to outlive the policy.
-        yield* service.updateSettings({ defaultRuntimeMode: "approval-required" });
+        yield* service.updateSettings({ defaultRuntimeMode: "full-access" });
         assert.notInclude(yield* fs.readFileString(config.settingsPath), "defaultRuntimeMode");
       }).pipe(Effect.provide(layerServerSettings(policy))),
     );
@@ -2418,11 +2418,11 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))(
         const fs = yield* FileSystem.FileSystem;
         yield* fs.writeFileString(
           config.settingsPath,
-          JSON.stringify({ defaultRuntimeMode: "approval-required" }),
+          JSON.stringify({ defaultRuntimeMode: "full-access" }),
         );
 
         yield* service.updateSettings({ defaultAutoPull: true });
-        assert.include(yield* fs.readFileString(config.settingsPath), '"approval-required"');
+        assert.include(yield* fs.readFileString(config.settingsPath), '"full-access"');
       }).pipe(Effect.provide(layerServerSettings(policy))),
     );
 
