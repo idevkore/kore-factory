@@ -12,6 +12,7 @@ import { buildWorlds, worldIdFor, type WorldRule } from "./worlds";
 const ENVIRONMENT_ID = "simulated";
 const SECOND_MS = 1_000;
 const MINUTE_MS = 60 * SECOND_MS;
+const DAY_MS = 24 * 60 * MINUTE_MS;
 
 const RULES: ReadonlyArray<WorldRule> = [
   { id: "harbor-works", name: "Harbor Works", projects: ["Harbor *"], paths: [] },
@@ -92,7 +93,7 @@ const TITLES: ReadonlyArray<string> = [
 type ApprovalTemplate = Omit<Extract<PendingRequest, { kind: "approval" }>, "requestId">;
 type QuestionTemplate = Omit<Extract<PendingRequest, { kind: "question" }>, "requestId">;
 
-const APPROVALS: ReadonlyArray<ApprovalTemplate> = [
+const ANSWERABLE_APPROVALS: ReadonlyArray<ApprovalTemplate> = [
   {
     kind: "approval",
     prompt: "Run the database migration against the local copy.",
@@ -105,13 +106,18 @@ const APPROVALS: ReadonlyArray<ApprovalTemplate> = [
     answerable: true,
     acceptsNote: false,
   },
-  {
-    kind: "approval",
-    prompt: "Push the branch to the shared remote.",
-    answerable: false,
-    acceptsNote: false,
-  },
 ];
+
+/** Only one is open at a time, and it clears by itself, so the island never fills with them. */
+const LOCKED_APPROVAL: ApprovalTemplate = {
+  kind: "approval",
+  prompt: "Push the branch to the shared remote.",
+  answerable: false,
+  acceptsNote: false,
+};
+const LOCKED_CLEARS_AFTER_MS = 180 * SECOND_MS;
+/** The first snapshot's third approval is the locked one. */
+const LOCKED_AT = 2;
 
 const QUESTIONS: ReadonlyArray<QuestionTemplate> = [
   {
@@ -167,6 +173,34 @@ const QUESTIONS: ReadonlyArray<QuestionTemplate> = [
       },
     ],
   },
+  {
+    kind: "question",
+    answerable: true,
+    questions: [
+      {
+        id: "branch",
+        header: "Branch",
+        question: "Which branch should the fix go on?",
+        options: [
+          { label: "New branch", description: "Start one for this fix", value: "new" },
+          { label: "Current branch", description: "Add it to the open work", value: "current" },
+        ],
+        allowCustomAnswer: false,
+        multiSelect: false,
+      },
+      {
+        id: "tests",
+        header: "Tests",
+        question: "Should it run the full test suite first?",
+        options: [
+          { label: "Yes", description: "Slower, but safer", value: "yes" },
+          { label: "No", description: "Only the tests beside the change", value: "no" },
+        ],
+        allowCustomAnswer: false,
+        multiSelect: false,
+      },
+    ],
+  },
 ];
 
 /** [min, max] in milliseconds, both included. */
@@ -186,7 +220,10 @@ interface SimulatedSession {
   readonly createdAtMs: number;
   readonly updatedAtMs: number;
   readonly waitingSinceMs: number | null;
-  /** When it next moves on: starts work, finishes work, or leaves. Null while it waits. */
+  /**
+   * When it next moves on: starts work, finishes work, leaves, or (the locked
+   * request only) is answered in its thread. Null while it waits on the island.
+   */
   readonly dueAtMs: number | null;
   readonly request: PendingRequest | null;
 }
@@ -253,6 +290,7 @@ function newSession(
 }
 
 function reconciled(sessions: ReadonlyArray<SimulatedSession>, denied: DeniedMarks): DeniedMarks {
+  if (denied.size === 0) return denied;
   return reconcileDenied(
     denied,
     sessions.map((session) => ({
@@ -274,17 +312,25 @@ export function createSimulation(seed: number, nowMs: number): Simulation {
       const id = nextId++;
       const createdAtMs = nowMs - random.between([30 * MINUTE_MS, 120 * MINUTE_MS]);
       if (needsYou(state)) {
-        const waitingSinceMs = nowMs - random.between([MINUTE_MS, 25 * MINUTE_MS]);
-        const request =
-          state === "needs_approval"
-            ? withRequestId(APPROVALS[approvals++ % APPROVALS.length]!, id)
-            : withRequestId(QUESTIONS[questions++ % QUESTIONS.length]!, id);
+        const approval = state === "needs_approval" ? approvals++ : null;
+        const locked = approval === LOCKED_AT;
+        const waitingSinceMs =
+          nowMs -
+          random.between(locked ? [10 * SECOND_MS, MINUTE_MS] : [MINUTE_MS, 25 * MINUTE_MS]);
+        const request = withRequestId(
+          approval === null
+            ? QUESTIONS[questions++ % QUESTIONS.length]!
+            : locked
+              ? LOCKED_APPROVAL
+              : ANSWERABLE_APPROVALS[approval % ANSWERABLE_APPROVALS.length]!,
+          id,
+        );
         return newSession(id, groupIndex, random, {
           state,
           createdAtMs,
           updatedAtMs: waitingSinceMs,
           waitingSinceMs,
-          dueAtMs: null,
+          dueAtMs: locked ? waitingSinceMs + LOCKED_CLEARS_AFTER_MS : null,
           request,
         });
       }
@@ -319,9 +365,15 @@ function finishWork(
   const roll = random.next();
   if (waiting < GROUPS[session.group]!.waitingCap && roll < 0.5) {
     const id = simulation.nextId;
+    const lockedOpen = simulation.sessions.some(
+      (other) => other.request !== null && !other.request.answerable,
+    );
+    const approvals = lockedOpen
+      ? ANSWERABLE_APPROVALS
+      : [...ANSWERABLE_APPROVALS, LOCKED_APPROVAL];
     const request =
       roll < 0.25
-        ? withRequestId(random.pick(APPROVALS), id)
+        ? withRequestId(random.pick(approvals), id)
         : withRequestId(random.pick(QUESTIONS), id);
     return {
       nextId: id + 1,
@@ -330,7 +382,7 @@ function finishWork(
         state: request.kind === "approval" ? "needs_approval" : "needs_answer",
         updatedAtMs: atMs,
         waitingSinceMs: atMs,
-        dueAtMs: null,
+        dueAtMs: request.answerable ? null : atMs + LOCKED_CLEARS_AFTER_MS,
         request,
       },
     };
@@ -350,7 +402,19 @@ function advance(simulation: Simulation, index: number): Simulation {
   const random = randomFrom(simulation.random);
   let nextId = simulation.nextId;
   let replacement: SimulatedSession;
-  if (session.state === "starting") {
+  let denied = simulation.denied;
+  if (needsYou(session.state)) {
+    // The locked request, answered in its thread: back to work, with no denied mark.
+    denied = clearDenied(denied, session.key);
+    replacement = {
+      ...session,
+      state: "working",
+      updatedAtMs: atMs,
+      waitingSinceMs: null,
+      dueAtMs: atMs + random.between(WORKING_MS),
+      request: null,
+    };
+  } else if (session.state === "starting") {
     replacement = {
       ...session,
       state: "working",
@@ -376,7 +440,7 @@ function advance(simulation: Simulation, index: number): Simulation {
     random: random.state(),
     nextId,
     sessions,
-    denied: reconciled(sessions, simulation.denied),
+    denied: reconciled(sessions, denied),
   };
 }
 
@@ -392,9 +456,22 @@ function nextDueIndex(sessions: ReadonlyArray<SimulatedSession>, nowMs: number):
 
 /**
  * Advances the simulation to `nowMs`, one change at a time in time order, so
- * stepping often or seldom to the same time gives the same result.
+ * stepping often or seldom to the same time gives the same result. A time that
+ * is not finite or not later is ignored; a jump past a day (a machine waking
+ * from sleep) moves every scheduled time forward instead of replaying the gap.
  */
 export function stepSimulation(simulation: Simulation, nowMs: number): Simulation {
+  if (!Number.isFinite(nowMs) || nowMs <= simulation.nowMs) return simulation;
+  const jumpMs = nowMs - simulation.nowMs;
+  if (jumpMs > DAY_MS) {
+    return {
+      ...simulation,
+      nowMs,
+      sessions: simulation.sessions.map((session) =>
+        session.dueAtMs === null ? session : { ...session, dueAtMs: session.dueAtMs + jumpMs },
+      ),
+    };
+  }
   let current = simulation;
   for (
     let index = nextDueIndex(current.sessions, nowMs);
@@ -403,7 +480,7 @@ export function stepSimulation(simulation: Simulation, nowMs: number): Simulatio
   ) {
     current = advance(current, index);
   }
-  return nowMs > current.nowMs ? { ...current, nowMs } : current;
+  return { ...current, nowMs };
 }
 
 function toIslandSession(session: SimulatedSession, denied: boolean): IslandSession {
@@ -448,8 +525,9 @@ export function simulationPending(
 
 /**
  * Answers a waiting session at `nowMs`. Approve and answer send it back to
- * work; deny marks it denied by the real feed's rule, and it works on.
- * Throws, as the real feed rejects, when the request is not open or cannot take this answer.
+ * work; deny marks it denied by the real feed's rule, and it works on. Throws
+ * when the request is not open, is locked, or is of the other kind. Like the
+ * real feed, it passes any `answers` through without checking them.
  */
 export function resolveSimulation(
   simulation: Simulation,
