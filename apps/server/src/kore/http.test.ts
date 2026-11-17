@@ -33,14 +33,17 @@ const principal = Layer.succeed(EnvironmentAuthenticatedAuth, (effect) =>
 );
 
 /** Serves the route over a fresh base directory, writing `worlds.json` first when given. */
-const getWorlds = (worldsJson: string | null) =>
+const getWorlds = (worldsJson: string | null | { readonly directory: true }) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
     const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "kore-worlds-test-" });
-    if (worldsJson !== null) {
+    const worldsPath = path.join(baseDir, "kore", "worlds.json");
+    if (typeof worldsJson === "string") {
       yield* fs.makeDirectory(path.join(baseDir, "kore"), { recursive: true });
-      yield* fs.writeFileString(path.join(baseDir, "kore", "worlds.json"), worldsJson);
+      yield* fs.writeFileString(worldsPath, worldsJson);
+    } else if (worldsJson !== null) {
+      yield* fs.makeDirectory(worldsPath, { recursive: true });
     }
     const routes = HttpApiBuilder.layer(
       HttpApi.make("environment").add(EnvironmentKoreHttpApi),
@@ -103,5 +106,16 @@ it.effect("fails as an internal error without echoing a file it cannot decode", 
     const broken = yield* getWorlds("{ not json private-marker");
     expect(broken.status).toBe(500);
     expect(broken.body).not.toContain("private-marker");
+  }),
+);
+
+it.effect("fails as an internal error when worlds.json cannot be read as a file", () =>
+  Effect.gen(function* () {
+    const { status, body } = yield* getWorlds({ directory: true });
+    expect(status).toBe(500);
+    expect(JSON.parse(body)).toMatchObject({
+      _tag: "EnvironmentInternalError",
+      reason: "kore_worlds_load_failed",
+    });
   }),
 );
