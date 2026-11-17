@@ -20,6 +20,8 @@ function session(key: string, state: SessionState, updatedHoursAgo: number): Isl
     createdAt: updatedAt,
     updatedAt,
     waitingSince: null,
+    worldId: "all",
+    lastDecision: null,
   };
 }
 

@@ -1,11 +1,17 @@
-import type { IslandEvent, IslandSnapshot } from "./contract";
+import type { IslandEvent, IslandSession } from "./contract";
+
+/** One world's sessions at one moment, and whether the feed has loaded them. */
+interface SessionsView {
+  readonly ready: boolean;
+  readonly sessions: ReadonlyArray<IslandSession>;
+}
 
 /**
- * What changed between two snapshots. The first ready snapshot yields no
- * events, so sessions that already exist appear in place; only sessions that
- * appear after it are added.
+ * What changed between two views. The first ready view yields no events, so
+ * sessions that already exist appear in place; only sessions that appear
+ * after it are added.
  */
-export function diffSnapshots(prev: IslandSnapshot | null, next: IslandSnapshot): IslandEvent[] {
+export function diffSnapshots(prev: SessionsView | null, next: SessionsView): IslandEvent[] {
   if (!next.ready || prev === null || !prev.ready) return [];
   const before = new Map(prev.sessions.map((session) => [session.key, session]));
   const after = new Set(next.sessions.map((session) => session.key));

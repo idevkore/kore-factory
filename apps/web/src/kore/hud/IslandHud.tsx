@@ -1,11 +1,23 @@
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Kbd } from "../../components/ui/kbd";
-import type { IslandSession, IslandSnapshot, PendingRequest, Resolution } from "../core/contract";
+import type {
+  CameraPreset,
+  IslandSession,
+  IslandWorld,
+  PendingRequest,
+  Resolution,
+} from "../core/contract";
 import { waitingSessions } from "../core/navigation";
 import { formatWaited, needsYou, stateLabel } from "../core/state";
 import { RequestForm } from "./RequestForm";
 import type { IslandWording } from "./wording";
+
+const CAMERA_NAMES: Record<CameraPreset, string> = {
+  overview: "Overview",
+  station: "Station",
+  top: "Top",
+};
 
 function FocusedSession(props: {
   readonly session: IslandSession;
@@ -50,13 +62,19 @@ function FocusedSession(props: {
 }
 
 export function IslandHud(props: {
-  readonly snapshot: IslandSnapshot;
+  readonly worlds: ReadonlyArray<IslandWorld>;
+  readonly activeWorldId: string | null;
+  readonly ready: boolean;
+  readonly worldsError: string | null;
   readonly wording: IslandWording;
   readonly nowMs: number;
   readonly focused: IslandSession | null;
   readonly pending: PendingRequest | null;
   readonly pendingLoading: boolean;
+  readonly camera: CameraPreset;
   readonly onFocus: (key: string) => void;
+  readonly onSelectWorld: (worldId: string) => void;
+  readonly onCamera: (camera: CameraPreset) => void;
   readonly onResolve: (
     sessionKey: string,
     requestId: string,
@@ -64,27 +82,47 @@ export function IslandHud(props: {
   ) => Promise<void>;
   readonly onOpenInConsole: (sessionKey: string) => void;
 }) {
-  const { snapshot, focused } = props;
-  const waiting = waitingSessions(snapshot.sessions);
-  const working = snapshot.sessions.filter((session) => session.state === "working").length;
+  const { worlds, focused } = props;
+  const world = worlds.find((entry) => entry.id === props.activeWorldId) ?? null;
+  const waiting = waitingSessions(world?.sessions ?? []);
+  const working = world?.working ?? 0;
   return (
     <aside
       aria-label="Island panel"
       className="absolute inset-y-0 right-0 flex w-96 max-w-full flex-col gap-6 overflow-y-auto border-l bg-background/95 p-4"
     >
       <header className="flex items-baseline justify-between gap-3">
-        <h1 className="font-semibold text-base">{props.wording.worldName}</h1>
+        <h1 className="font-semibold text-base">{world?.name ?? props.wording.worldName}</h1>
         <p className="text-muted-foreground text-xs">
           Working {working} · Needs you {waiting.length}
         </p>
       </header>
+
+      {worlds.length > 1 ? (
+        <nav aria-label="Worlds" className="flex flex-wrap gap-1">
+          {worlds.map((entry) => (
+            <Button
+              key={entry.id}
+              size="xs"
+              variant={entry.id === world?.id ? "secondary" : "ghost"}
+              aria-current={entry.id === world?.id ? "true" : undefined}
+              onClick={() => props.onSelectWorld(entry.id)}
+            >
+              {entry.name} {entry.waiting}
+            </Button>
+          ))}
+        </nav>
+      ) : null}
+      {props.worldsError === null ? null : (
+        <p className="text-muted-foreground text-xs">{props.worldsError}</p>
+      )}
 
       <section aria-labelledby="island-needs-you" className="flex flex-col gap-2">
         <h2 id="island-needs-you" className="flex items-center gap-2 font-medium text-sm">
           Needs you
           <Badge variant={waiting.length > 0 ? "error" : "secondary"}>{waiting.length}</Badge>
         </h2>
-        {!snapshot.ready ? (
+        {!props.ready ? (
           <p className="text-muted-foreground text-sm">Loading sessions…</p>
         ) : waiting.length === 0 ? (
           <p className="text-muted-foreground text-sm">Nothing is waiting on you.</p>
@@ -126,9 +164,18 @@ export function IslandHud(props: {
         />
       )}
 
-      <footer className="mt-auto flex items-center gap-2 text-muted-foreground text-xs">
+      <footer className="mt-auto flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
         <Kbd>N</Kbd> next waiting
         <Kbd>Esc</Kbd> clear focus
+        {worlds.length > 1 ? (
+          <>
+            <Kbd>[</Kbd>
+            <Kbd>]</Kbd> world
+          </>
+        ) : null}
+        <Kbd>1</Kbd>
+        <Kbd>2</Kbd>
+        <Kbd>3</Kbd> camera: {CAMERA_NAMES[props.camera]}
       </footer>
     </aside>
   );

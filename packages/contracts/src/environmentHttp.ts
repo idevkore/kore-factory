@@ -73,6 +73,7 @@ import {
   OrchestrationV2ThreadHistoryPage,
   OrchestrationV2ThreadTranscript,
 } from "./orchestrationV2.ts";
+import { KoreWorldsResponse } from "./kore.ts";
 import { Project, ProjectMutation, ProjectSnapshot } from "./project.ts";
 import {
   PullRequestDiffInput,
@@ -141,6 +142,7 @@ export const EnvironmentInternalErrorReason = Schema.Literals([
   "client_session_revoke_failed",
   "project_snapshot_failed",
   "project_mutation_failed",
+  "kore_worlds_load_failed",
   "orchestration_snapshot_failed",
   "orchestration_thread_snapshot_failed",
   "orchestration_thread_bounded_snapshot_failed",
@@ -770,6 +772,14 @@ class EnvironmentProjectsHttpApi extends HttpApiGroup.make("projects")
     }).middleware(EnvironmentAuthenticatedAuth),
   ) {}
 
+export class EnvironmentKoreHttpApi extends HttpApiGroup.make("kore").add(
+  HttpApiEndpoint.get("worlds", "/api/kore/worlds", {
+    headers: OptionalBearerHeaders,
+    success: KoreWorldsResponse,
+    error: EnvironmentProjectSnapshotErrors,
+  }).middleware(EnvironmentAuthenticatedAuth),
+) {}
+
 class EnvironmentPullRequestsHttpApi extends HttpApiGroup.make("pullRequests").add(
   HttpApiEndpoint.post("diff", "/api/pull-requests/diff", {
     headers: OptionalBearerHeaders,
@@ -1020,6 +1030,7 @@ export class EnvironmentHttpApi extends HttpApi.make("environment")
   .add(EnvironmentOrchestrationHttpApi)
   .add(EnvironmentPullRequestsHttpApi)
   .add(EnvironmentProjectsHttpApi)
+  .add(EnvironmentKoreHttpApi)
   .add(EnvironmentVoiceHttpApi)
   .add(EnvironmentConnectHttpApi)
   .add(EnvironmentWebhooksHttpApi) {}

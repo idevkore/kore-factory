@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "worlds": [
+    {
+      "id": "storefront",
+      "name": "Storefront",
+      "projects": ["Storefront*", "*checkout*"]
+    },
+    {
+      "id": "acme",
+      "name": "Acme",
+      "paths": ["/home/dev/acme"]
+    },
+    {
+      "id": "tools",
+      "name": "Tools",
+      "projects": ["* CLI"],
+      "paths": ["/home/dev/tools", "/home/dev/scripts/"]
+    }
+  ]
+}
