@@ -2,7 +2,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import type { PerspectiveCamera } from "three";
 
-import type { IslandSession } from "../core/contract";
+import type { CameraPreset, IslandSession } from "../core/contract";
 import { layoutSessions, STATION_POSITIONS } from "../core/layout";
 import { fitIslandCamera } from "./camera";
 import { CommanderFigure } from "./CommanderFigure";
@@ -31,6 +31,8 @@ export function IslandScene(props: {
   readonly flights: ReadonlySet<string>;
   readonly focusKey: string | null;
   readonly coveredRight: number;
+  /** Accepted for the camera presets; every preset draws the fixed view for now. */
+  readonly camera: CameraPreset;
   readonly onFocus: (key: string) => void;
 }) {
   const positions = layoutSessions(props.sessions);

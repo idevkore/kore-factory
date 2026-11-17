@@ -24,6 +24,8 @@ function session(key: string, station: StationId, createdAt: string): IslandSess
     createdAt,
     updatedAt: createdAt,
     waitingSince: null,
+    worldId: "all",
+    lastDecision: null,
   };
 }
 

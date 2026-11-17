@@ -26,13 +26,33 @@ export interface IslandSession {
   readonly createdAt: string; // ISO
   readonly updatedAt: string; // ISO
   readonly waitingSince: string | null; // ISO, only in needs_* states
+  readonly worldId: string;
+  /** "denied" after the user denied its approval from the island, until it runs again. */
+  readonly lastDecision: "denied" | null;
+}
+
+export interface WorldUsage {
+  readonly tokens: number;
+  readonly costUsd: number | null;
+}
+
+export interface IslandWorld {
+  readonly id: string;
+  readonly name: string;
+  /** The world's visible sessions, at most 24. */
+  readonly sessions: ReadonlyArray<IslandSession>;
+  readonly working: number; // starting or working
+  readonly waiting: number; // needsYou(state)
+  readonly oldestWaitingSince: string | null;
+  readonly usage: WorldUsage | null;
 }
 
 export interface IslandSnapshot {
-  readonly worldId: string;
-  readonly ready: boolean; // false until the thread list has loaded
-  readonly sessions: ReadonlyArray<IslandSession>;
+  readonly ready: boolean; // false until the thread list and the world rules have loaded
+  readonly worlds: ReadonlyArray<IslandWorld>;
 }
+
+export type CameraPreset = "overview" | "station" | "top";
 
 export interface PendingQuestion {
   readonly id: string;
@@ -69,6 +89,8 @@ export interface IslandFeed {
   /** The focused session's open request; null when it has none or it is still loading. */
   readonly pending: PendingRequest | null;
   readonly pendingLoading: boolean;
+  /** Why the world rules could not be loaded; the island then shows one world. */
+  readonly worldsError: string | null;
   resolve(sessionKey: string, requestId: string, resolution: Resolution): Promise<void>;
   openInConsole(sessionKey: string): void;
 }
@@ -78,5 +100,3 @@ export type IslandEvent =
   | { type: "session_removed"; key: string }
   | { type: "state_changed"; key: string; from: SessionState; to: SessionState }
   | { type: "station_changed"; key: string; from: StationId; to: StationId };
-
-export const ISLAND_WORLD = { id: "kore-hq" } as const;
