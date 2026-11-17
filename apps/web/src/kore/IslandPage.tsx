@@ -2,20 +2,24 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useEffectEvent, useState } from "react";
 
 import { SidebarInset } from "../components/ui/sidebar";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useNowMinute } from "../hooks/useNowMinute";
 import type { CameraPreset, IslandFeed, IslandSession, IslandWorld } from "./core/contract";
 import { diffSnapshots } from "./core/diff";
 import { nextWaitingAcrossWorlds } from "./core/worlds";
 import { useSimulatedIslandFeed } from "./feed/useSimulatedIslandFeed";
 import { useT3IslandFeed } from "./feed/useT3IslandFeed";
+import {
+  COVERED_BOTTOM_PX,
+  COVERED_TOP_PX,
+  PANEL_WIDTH_PX,
+  RAIL_COVERED_LEFT_PX,
+} from "./hud/insets";
 import { IslandHud } from "./hud/IslandHud";
 import { IslandMirror } from "./hud/IslandMirror";
 import { useIslandKeys } from "./hud/useIslandKeys";
 import { IslandScene } from "./scene/IslandScene";
 import { currentTheme } from "./scene/theme";
-
-/** The panel is `w-96`; the camera centres the island in the canvas left of it. */
-const PANEL_WIDTH_PX = 384;
 
 interface WorldView {
   readonly worldId: string | null;
@@ -128,6 +132,7 @@ function IslandView({ feed, focusKey, setFocusKey, simulated }: IslandViewProps)
     sessions,
   });
   const focused = sessions.find((session) => session.key === focusKey) ?? null;
+  const railShown = useMediaQuery("lg") && worlds.length > 1;
 
   const unpinnedWorld =
     ready && activeWorld !== null && search.world !== activeWorld.id ? activeWorld.id : null;
@@ -187,6 +192,9 @@ function IslandView({ feed, focusKey, setFocusKey, simulated }: IslandViewProps)
           flights={flights}
           focusKey={focused?.key ?? null}
           coveredRight={PANEL_WIDTH_PX}
+          coveredLeft={railShown ? RAIL_COVERED_LEFT_PX : 0}
+          coveredTop={COVERED_TOP_PX}
+          coveredBottom={COVERED_BOTTOM_PX}
           camera={camera}
           onFocus={focusSession}
         />
