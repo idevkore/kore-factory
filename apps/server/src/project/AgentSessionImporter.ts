@@ -2,7 +2,6 @@ import {
   DEFAULT_MODEL,
   DEFAULT_MODEL_BY_PROVIDER,
   DEFAULT_PROVIDER_INTERACTION_MODE,
-  DEFAULT_RUNTIME_MODE,
   isRuntimeModeAbove,
   AgentSessionImportProjectChangedError,
   AgentSessionImportProjectNotFoundError,
@@ -197,11 +196,12 @@ const make = Effect.gen(function* () {
     ) {
       return yield* new AgentSessionImportProjectChangedError({ projectId: input.projectId });
     }
-    // Imports run in full access, except under a policy ceiling: then in the project's default,
-    // which the policy keeps under it, so imported threads never sit above the ceiling.
+    // Imports run in full access whatever the default, since an unattended run cannot answer
+    // approvals. Under a policy ceiling they run in the project's default instead, which the
+    // policy keeps under it, so imported threads never sit above the ceiling.
     const runtimeMode =
       ceiling === undefined
-        ? DEFAULT_RUNTIME_MODE
+        ? "full-access"
         : yield* settingsService.getSettings.pipe(
             Effect.mapError(
               (cause) => new AgentSessionScanError({ operation: "read-settings", cause }),
