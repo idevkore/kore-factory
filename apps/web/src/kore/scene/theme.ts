@@ -24,6 +24,8 @@ export interface Theme {
     readonly figure: Readonly<Record<SessionState, string>>;
     /** The band across a failed session's figure. */
     readonly failedBand: string;
+    /** The crossed post beside a session whose approval was denied. */
+    readonly deniedPost: string;
     /** The "this session needs you" sign. */
     readonly marker: string;
     readonly sea: string;
@@ -66,6 +68,8 @@ export interface Theme {
     readonly carrierFlightMs: number;
     /** A figure walking to its new slot when its station changes. */
     readonly moveMs: number;
+    /** The camera moving to a new preset or a new station. */
+    readonly cameraMs: number;
   };
 }
 
@@ -96,6 +100,7 @@ export const currentTheme: Theme = {
       failed: "#1F2329",
     },
     failedBand: "#EF4444",
+    deniedPost: "#7A3B2E",
     marker: "#EF4444",
     sea: "#0F4C68",
     reef: "#B98A78",
@@ -129,5 +134,5 @@ export const currentTheme: Theme = {
       starfish: "#E07B39",
     },
   },
-  durations: { carrierFlightMs: 1200, moveMs: 800 },
+  durations: { carrierFlightMs: 1200, moveMs: 800, cameraMs: 600 },
 };
