@@ -204,8 +204,9 @@ overrides:
   vite: "catalog:"
   vite-plus: "catalog:"
   yaml: "catalog:"
-  # Security fixes for transitive dependencies. Each key matches only the advisory's
-  # vulnerable range, so other copies of the package stay where they are.
+  # Security fixes for transitive dependencies. pnpm applies a ranged key to every
+  # declared range that overlaps it, so a key names the parent when a bare range
+  # would also pin ranges the advisory does not cover.
   # GHSA-9wv6-86v2-598j (ReDoS): @vercel/routing-utils pins 6.1.0 and already
   # compares it against 6.3.0 at runtime.
   "path-to-regexp@>=4.0.0 <6.3.0": 6.3.0
@@ -216,7 +217,7 @@ overrides:
   # GHSA-238p-pmpm-9mq7 (inherited options such as `trust`): micromark-extension-llm-math
   # asks for ^0.16.0 but calls only renderToString, in mathHtml, which remark-math
   # never loads. 0.19.1 is the copy the web renders with.
-  "katex@>=0.11.0 <0.18.2": 0.19.1
+  "micromark-extension-llm-math>katex@>=0.11.0 <0.18.2": 0.19.1
   # GHSA-mrhx-c7xc-m3w5 (unbounded array issues): @vercel/config asks for ^3.22.0, which
   # has no fixed release. Its one schema, a cron validator of five regex strings, behaves
   # the same on 4.6.7, the copy the rest of the repo uses.
