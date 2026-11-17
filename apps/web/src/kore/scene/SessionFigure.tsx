@@ -1,17 +1,23 @@
 import type { SessionState } from "../core/contract";
 import { currentTheme } from "./theme";
 
+/** How far a stopped figure leans back, tail on the ground, head away from its snout. */
+const RESTING_LEAN = 0.45;
+
 /**
  * The figure that stands for one session: an upright seahorse, snout to +x so
- * the fixed camera sees it side on. Its body colour follows the session's state.
+ * the overview camera sees it side on. Its body colour follows the session's
+ * state; a failed one wears a red chest band, and a stopped one rests leaning
+ * back with an iron band round its waist, so stopped and idle differ in shape.
  */
 export function SessionFigure(props: { readonly state: SessionState }) {
   const { palette } = currentTheme;
   const body = (
     <meshStandardMaterial color={palette.figure[props.state]} metalness={0.3} roughness={0.5} />
   );
+  const stopped = props.state === "stopped";
   return (
-    <group>
+    <group rotation-z={stopped ? RESTING_LEAN : 0}>
       {/* Turned so the curl's gap is at the top, where the tail meets it. */}
       <mesh position={[0.02, 0.15, 0]} rotation-z={Math.PI * 0.7}>
         <torusGeometry args={[0.11, 0.04, 8, 20, Math.PI * 1.6]} />
@@ -29,6 +35,12 @@ export function SessionFigure(props: { readonly state: SessionState }) {
         <mesh position={[0.03, 0.72, 0]}>
           <cylinderGeometry args={[0.185, 0.185, 0.08, 16]} />
           <meshStandardMaterial color={palette.failedBand} />
+        </mesh>
+      ) : null}
+      {stopped ? (
+        <mesh position={[-0.01, 0.52, 0]}>
+          <cylinderGeometry args={[0.15, 0.15, 0.08, 16]} />
+          <meshStandardMaterial color={palette.iron} metalness={0.6} roughness={0.4} />
         </mesh>
       ) : null}
       <mesh position={[-0.17, 0.74, 0]} rotation-z={0.2}>

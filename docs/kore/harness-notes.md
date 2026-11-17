@@ -8,7 +8,7 @@ Notes for developing KORE Factory on the T3 Code base at tag `v0.1.9`. Everythin
 - Electron desktop dev starts: its logs show the backend ready, `main window created` and the renderer's `dom-ready`. The window itself has not been inspected (**unverified**).
 - Product analytics are off unless `T3CODE_TELEMETRY_ENABLED=true`.
 - The app is named "KORE Factory" in the two central constants; the tab title reads "KORE Factory (Dev)".
-- `/island` renders a React Three Fiber canvas with a WebGL2 context.
+- `/island` renders the island (worlds, scene, panel, simulator) on a React Three Fiber canvas with a WebGL2 context. Its first run in a dev build is recorded under [The island page](#the-island-page).
 - Runs against the Claude provider are recorded under [Claude provider](#claude-provider): one approval accepted, one declined with a note.
 
 ## Versions
@@ -74,11 +74,25 @@ vp run dev:desktop --home-dir "$PWD/.t3/desktop-home" --no-seed
 ## The island page
 
 - **Route.** `apps/web/src/routes/_chat.island.tsx` registers `/_chat/island`, which serves `/island`. Under the `_chat` layout it inherits the auth redirect to `/pair` and renders inside the app shell with the thread sidebar, like `/usage`. `__root.tsx` only auto-navigates away from `/`, so `/island` stays put.
-- **Page.** `apps/web/src/kore/IslandPage.tsx` renders `<SidebarInset className="h-dvh">`, a full-size wrapper with background `#0A0B0E`, and an R3F `<Canvas>` with a `#D4AF37` box that `useFrame` turns at 0.2 and 0.3 rad/s.
-- **Checked in a browser at a 1280×800 viewport.** There is one `<canvas>` with `data-engine="three.js r180"`, CSS size 1024×800 (the width beside the sidebar) and drawing buffer 2048×1600 at dpr 2. `getContext('webgl2')` returns R3F's own context, and `isContextLost()` is false. `frameloop` is `always`, the scene background is `0a0b0e` and the mesh colour `d4af37`. Each frame is one draw call, and the clear colour after a frame is `[10, 11, 14, 255]`. Stepping two frames through R3F's `advance()` moved the rotation from `[0, 0]` to `[6.44, 9.66]`, the expected 2:3 ratio. There were no console errors.
-- **Not yet watched in a visible window.** The check ran in a background tab, where `requestAnimationFrame` and `ResizeObserver` do not fire, so R3F sized itself after a `resize` event and frames were stepped by hand. Continuous animation in a visible window is **unverified**.
+- **Page.** `apps/web/src/kore/IslandPage.tsx` renders `<SidebarInset className="h-dvh">` with the scene, the panel's cards and the hidden text mirror. What the island does is in [island.md](island.md). The route keeps `world` and `feed` (`sim` only) in the URL.
+- **Server route.** `GET /api/kore/worlds` (group `kore` in `EnvironmentHttpApi`, `packages/contracts/src/environmentHttp.ts`; handler `apps/server/src/kore/http.ts`) needs the `orchestration:read` scope and answers `{ worlds }` from `<baseDir>/kore/worlds.json`, or no worlds when the file is missing. A file it cannot read or decode answers 500 `EnvironmentInternalError` with reason `kore_worlds_load_failed`. Neither the body nor the server log carries the file's contents: the log names only the operation and a fixed detail, such as `not a version 1 worlds file`. The web client calls it through `executeConnectedEnvironmentHttpRequest` (`apps/web/src/kore/feed/koreWorlds.ts`). In dev, React's StrictMode runs the loading effect twice, so each island open shows two requests.
+- **Request shapes.** `apps/web/src/kore/core/simulator.ts` (`/island?feed=sim`) is the reference for every `PendingRequest` the panel must handle: approvals with and without a note, one that cannot be answered from the island, single and multiple choice, a typed answer and two questions in one request. It builds its worlds with `buildWorlds` and its denied marks with the same rule as the live feed, so a change to either shows in the simulator too.
+- **The canvas** is `frameloop="demand"`: it asks for frames only while a carrier flies, a figure walks or the camera moves.
+- **A background pane does not fire `ResizeObserver`.** In a hidden or background tab R3F keeps its first size until a `resize` event; dispatch one (`window.dispatchEvent(new Event("resize"))`) after changing the viewport. Continuous animation in a visible window is **unverified**.
 - **First load after adding the packages is slow:** Vite optimizes `@react-three/fiber` and reloads the page once.
-- **Use `frameloop="demand"` for the real island.** `frameloop="always"` repaints every frame, and T3's `AGENTS.md` rules out continuously repainting animations because they peg the GPU on high-refresh displays. The placeholder box keeps `always`; with `demand`, call `invalidate()` when something changes.
+
+### First run of the island (item 08, 2026-11-17)
+
+How it was run:
+
+- `vp run dev --home-dir "$PWD/.t3" --no-seed` from the worktree, so the data home was the worktree's empty `.t3` and no real session data was copied in. The dev runner picked free ports, away from another worktree's dev server running at the same time.
+- The command ran from a shell with every `ANTHROPIC_*` and `CLAUDE*` variable unset and `T3CODE_TELEMETRY_ENABLED=false`, in its own process group, so one `SIGINT` to the group stopped every process in it. Its output went through `sed` to replace the pairing token with `[redacted]` before reaching the log.
+- Pairing: `node src/bin.ts pair --base-dir <worktree>/.t3 --ttl 10m` from `apps/server` minted a one-time token, opened once in the browser at the web port's `/pair#token=…`.
+- The browser was the built-in pane, hidden, with viewport emulation for widths. The page was read only as text: the hidden mirror (`ul[aria-label="Island sessions"]` and its `data-*` attributes), the panel's text, `getBoundingClientRect` for the cards, `elementFromPoint` for clicks between cards, and the console and network logs. No screenshots were taken.
+- The live check used only `Replay (dev)`, scenario "Write approval", in Supervised mode, on a project that was an empty scratch git folder, so the replayed `printf` wrote its fixture file there and nowhere else.
+- The browser tool's `key` action sends `bracketright` with an empty `key`; send the literal `]` or `[` instead.
+
+What it showed is in island.md under "Checked".
 
 ## Engineering notes
 

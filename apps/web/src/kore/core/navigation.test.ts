@@ -16,6 +16,8 @@ function session(key: string, state: SessionState, waitingSince: string | null):
     createdAt: "2026-01-02T08:00:00.000Z",
     updatedAt: "2026-01-02T08:00:00.000Z",
     waitingSince,
+    worldId: "all",
+    lastDecision: null,
   };
 }
 

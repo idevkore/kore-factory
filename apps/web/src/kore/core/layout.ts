@@ -79,24 +79,108 @@ export function slotPosition(station: StationId, index: number, count: number): 
   ];
 }
 
-/** Each session's slot, numbered per station in order of creation. */
-export function layoutSessions(sessions: ReadonlyArray<IslandSession>): Map<string, Vec3> {
+/** How many figures stand at each station before the rest go on its stack. */
+export const STANDING_CAP: Record<StationId, number> = {
+  home: 12,
+  work: 8,
+  intake: 6,
+  gate: 6,
+};
+
+/**
+ * Where each station's stack sits: just outside its slot ring, turned this far
+ * from the side that faces the centre, onto a side the overview camera sees
+ * and clear of the keepers and the sea life.
+ */
+const STACK_TURN: Record<StationId, number> = {
+  home: Math.PI / 2,
+  work: -Math.PI / 2,
+  intake: -Math.PI / 4,
+  gate: -Math.PI / 2,
+};
+
+/** The ground spot of `station`'s stack. */
+export function stackPosition(station: StationId): Vec3 {
+  const [outX, outZ] = outwardFrom(station);
+  const angle = Math.atan2(-outZ, -outX) + STACK_TURN[station];
+  const radius = FIRST_RING[station] + RING_GAP;
+  const [x, , z] = STATION_POSITIONS[station];
+  return [x + radius * Math.cos(angle), 0, z + radius * Math.sin(angle)];
+}
+
+/** The sessions past a station's cap, drawn as one pile of discs beside it. */
+export interface SessionStack {
+  readonly station: StationId;
+  readonly position: Vec3;
+  /** The pile from the bottom up: station order, after the focused session's swap. */
+  readonly keys: ReadonlyArray<string>;
+  /**
+   * What a click focuses: in the sessions past the cap in station order (before
+   * the swap), the one after the focused one, wrapping, else the first. So
+   * repeated clicks visit each of them in turn.
+   */
+  readonly next: string;
+}
+
+interface SessionLayout {
+  /** The slot of every session that stands. */
+  readonly standing: ReadonlyMap<string, Vec3>;
+  /** One per station that has more sessions than its cap. */
+  readonly stacks: ReadonlyArray<SessionStack>;
+}
+
+const NEVER = Number.POSITIVE_INFINITY;
+
+function byCreation(a: IslandSession, b: IslandSession): number {
+  return Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.key.localeCompare(b.key);
+}
+
+/** Longest waiting first; a session with no wait time goes after those with one. */
+function byWaiting(a: IslandSession, b: IslandSession): number {
+  const waitedA = a.waitingSince === null ? NEVER : Date.parse(a.waitingSince);
+  const waitedB = b.waitingSince === null ? NEVER : Date.parse(b.waitingSince);
+  return (waitedA === waitedB ? 0 : waitedA < waitedB ? -1 : 1) || byCreation(a, b);
+}
+
+/**
+ * Each station's sessions in order (at the gate, longest waiting first; at the
+ * others, oldest first). The first `STANDING_CAP` stand in slots and the rest
+ * go on the station's stack. The focused session always stands: past the cap,
+ * it takes the last slot and that slot's session goes to the front of the stack.
+ */
+export function layoutSessions(
+  sessions: ReadonlyArray<IslandSession>,
+  focusKey: string | null,
+): SessionLayout {
   const byStation = new Map<StationId, IslandSession[]>();
   for (const session of sessions) {
     const group = byStation.get(session.station) ?? [];
     group.push(session);
     byStation.set(session.station, group);
   }
-  const positions = new Map<string, Vec3>();
+  const standing = new Map<string, Vec3>();
+  const stacks: SessionStack[] = [];
   for (const [station, group] of byStation) {
-    const ordered = group.toSorted(
-      (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.key.localeCompare(b.key),
-    );
-    for (const [index, session] of ordered.entries()) {
-      positions.set(session.key, slotPosition(station, index, ordered.length));
+    const ordered = group.toSorted(station === "gate" ? byWaiting : byCreation);
+    const cap = STANDING_CAP[station];
+    const keys = ordered.map((session) => session.key);
+    const overflow = keys.slice(cap);
+    const focusIndex = focusKey === null ? -1 : keys.indexOf(focusKey);
+    if (focusKey !== null && focusIndex >= cap) {
+      keys.splice(focusIndex, 1);
+      keys.splice(cap - 1, 0, focusKey);
+    }
+    const standingKeys = keys.slice(0, cap);
+    for (const [index, key] of standingKeys.entries()) {
+      standing.set(key, slotPosition(station, index, standingKeys.length));
+    }
+    const overflowIndex = focusKey === null ? -1 : overflow.indexOf(focusKey);
+    const next = overflow[(overflowIndex + 1) % overflow.length];
+    if (next !== undefined) {
+      stacks.push({ station, position: stackPosition(station), keys: keys.slice(cap), next });
     }
   }
-  return positions;
+  return { standing, stacks };
 }
 
 /** A point on the carrier's arc: a quadratic Bézier from `from` to `to`, raised in the middle. */

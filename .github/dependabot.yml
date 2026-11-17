@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    # Vendored reference repositories; nothing installs them.
+    exclude-paths:
+      - ".repos/**"
+    schedule:
+      interval: weekly
+      day: monday
+    target-branch: develop
+    open-pull-requests-limit: 5
+    # Matches pnpm's minimumReleaseAge, left at its default of 1440 minutes.
+    cooldown:
+      default-days: 1
+    commit-message:
+      prefix: build(deps)
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    target-branch: develop
+    commit-message:
+      prefix: ci(deps)

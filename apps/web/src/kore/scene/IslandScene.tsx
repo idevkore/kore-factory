@@ -1,39 +1,33 @@
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useRef } from "react";
-import type { PerspectiveCamera } from "three";
+import { Canvas } from "@react-three/fiber";
 
-import type { IslandSession } from "../core/contract";
-import { layoutSessions, STATION_POSITIONS } from "../core/layout";
-import { fitIslandCamera } from "./camera";
+import type { CameraPreset, IslandSession, SessionState } from "../core/contract";
+import { layoutSessions } from "../core/layout";
 import { CommanderFigure } from "./CommanderFigure";
 import { Ground } from "./Ground";
+import { IslandCamera } from "./IslandCamera";
 import { KeeperFigures } from "./KeeperFigures";
 import { Scenery } from "./Scenery";
 import { SessionPiece } from "./SessionPiece";
 import { StationShapes } from "./StationShapes";
+import { StationStack } from "./StationStack";
 import { currentTheme } from "./theme";
-
-/** Refits the fixed camera on frames the on-demand loop draws, when the canvas size changed. */
-function IslandCamera(props: { readonly coveredRight: number }) {
-  const appliedSize = useRef("");
-  useFrame((state) => {
-    const { width, height } = state.size;
-    const sizeKey = `${width}x${height}x${props.coveredRight}`;
-    if (appliedSize.current === sizeKey || width === 0 || height === 0) return;
-    appliedSize.current = sizeKey;
-    fitIslandCamera(state.camera as PerspectiveCamera, width, height, props.coveredRight);
-  });
-  return null;
-}
 
 export function IslandScene(props: {
   readonly sessions: ReadonlyArray<IslandSession>;
   readonly flights: ReadonlySet<string>;
   readonly focusKey: string | null;
   readonly coveredRight: number;
+  /** Pixels of the canvas's left, top and bottom edges the panel covers; 0 when left out. */
+  readonly coveredLeft?: number;
+  readonly coveredTop?: number;
+  readonly coveredBottom?: number;
+  readonly camera: CameraPreset;
   readonly onFocus: (key: string) => void;
 }) {
-  const positions = layoutSessions(props.sessions);
+  const { standing, stacks } = layoutSessions(props.sessions, props.focusKey);
+  const focused = props.sessions.find((session) => session.key === props.focusKey);
+  const states = new Map(props.sessions.map((session) => [session.key, session.state]));
+  const stateOf = (key: string): SessionState => states.get(key) ?? "idle";
   return (
     <Canvas
       frameloop="demand"
@@ -42,7 +36,16 @@ export function IslandScene(props: {
       camera={{ fov: 40, near: 1, far: 400, aspect: 1, position: [30, 34, 47] }}
     >
       <color attach="background" args={[currentTheme.palette.background]} />
-      <IslandCamera coveredRight={props.coveredRight} />
+      <IslandCamera
+        preset={props.camera}
+        station={focused?.station ?? "gate"}
+        covered={{
+          left: props.coveredLeft ?? 0,
+          right: props.coveredRight,
+          top: props.coveredTop ?? 0,
+          bottom: props.coveredBottom ?? 0,
+        }}
+      />
       <ambientLight intensity={0.6} />
       <directionalLight position={[8, 18, 12]} intensity={1.4} />
       <directionalLight position={[-10, 8, -6]} intensity={0.3} />
@@ -51,15 +54,21 @@ export function IslandScene(props: {
       <CommanderFigure />
       <KeeperFigures />
       <Scenery />
-      {props.sessions.map((session) => (
-        <SessionPiece
-          key={session.key}
-          session={session}
-          target={positions.get(session.key) ?? STATION_POSITIONS[session.station]}
-          inFlight={props.flights.has(session.key)}
-          focused={session.key === props.focusKey}
-          onFocus={props.onFocus}
-        />
+      {props.sessions.map((session) => {
+        const target = standing.get(session.key);
+        return target === undefined ? null : (
+          <SessionPiece
+            key={session.key}
+            session={session}
+            target={target}
+            inFlight={props.flights.has(session.key)}
+            focused={session.key === props.focusKey}
+            onFocus={props.onFocus}
+          />
+        );
+      })}
+      {stacks.map((stack) => (
+        <StationStack key={stack.station} stack={stack} stateOf={stateOf} onFocus={props.onFocus} />
       ))}
     </Canvas>
   );

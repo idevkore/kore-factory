@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import type { IslandSession, IslandSnapshot, SessionState } from "./contract";
+import type { IslandSession, SessionState } from "./contract";
 import { diffSnapshots } from "./diff";
 import { stationFor } from "./state";
 
@@ -16,11 +16,13 @@ function session(key: string, state: SessionState): IslandSession {
     createdAt: "2026-01-02T08:00:00.000Z",
     updatedAt: "2026-01-02T08:00:00.000Z",
     waitingSince: null,
+    worldId: "all",
+    lastDecision: null,
   };
 }
 
-function snapshot(ready: boolean, sessions: ReadonlyArray<IslandSession>): IslandSnapshot {
-  return { worldId: "kore-hq", ready, sessions };
+function snapshot(ready: boolean, sessions: ReadonlyArray<IslandSession>) {
+  return { ready, sessions };
 }
 
 describe("diffSnapshots", () => {

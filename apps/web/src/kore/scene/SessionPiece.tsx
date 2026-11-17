@@ -6,6 +6,7 @@ import type { IslandSession } from "../core/contract";
 import { carrierPoint, COMMANDER_HAND, type Vec3 } from "../core/layout";
 import { needsYou } from "../core/state";
 import { Carrier } from "./Carrier";
+import { DeniedPost } from "./DeniedPost";
 import { Marker } from "./Marker";
 import { SessionFigure } from "./SessionFigure";
 import { currentTheme } from "./theme";
@@ -30,8 +31,9 @@ function FocusRing() {
 }
 
 /**
- * One session on the ground: its carrier while it flies in, then its figure,
- * with the marker while it needs the user and a ring while it is focused.
+ * One standing session: its carrier while it flies in, then its figure, with
+ * the marker while it needs the user, a crossed post while its last approval
+ * stands denied, and a ring while it is focused.
  * Moves to its slot when the slot changes and asks for frames only while moving.
  */
 export function SessionPiece(props: {
@@ -103,6 +105,7 @@ export function SessionPiece(props: {
     <group ref={group} onClick={focus}>
       {inFlight ? <Carrier progress={flightProgress} /> : <SessionFigure state={session.state} />}
       {!inFlight && needsYou(session.state) ? <Marker /> : null}
+      {!inFlight && session.lastDecision === "denied" ? <DeniedPost /> : null}
       {!inFlight && props.focused ? <FocusRing /> : null}
       <mesh position={[0, 0.7, 0]}>
         <boxGeometry args={[0.9, 1.4, 0.9]} />
