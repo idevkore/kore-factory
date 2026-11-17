@@ -1,5 +1,6 @@
 import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/shell";
 import {
+  type AtomCommandResult,
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
@@ -7,6 +8,7 @@ import {
   derivePendingThreadRequests,
   type PendingThreadRequests,
 } from "@t3tools/client-runtime/state/thread-requests";
+import type { EnvironmentId, KoreWorldsResponse } from "@t3tools/contracts";
 import { useNavigate } from "@tanstack/react-router";
 import * as DateTime from "effect/DateTime";
 import { useEffect, useEffectEvent, useState } from "react";
@@ -32,7 +34,13 @@ import type {
 } from "../core/contract";
 import { clearDenied, type DeniedMarks, markDenied, reconcileDenied } from "../core/denied";
 import { needsYou, sessionStateOf, stationFor } from "../core/state";
-import { buildWorlds, type WorldRule, worldIdFor } from "../core/worlds";
+import {
+  INITIAL_WORLD_RULES,
+  nextWorldRules,
+  type WorldRulesEvent,
+  type WorldRulesState,
+} from "../core/worldRules";
+import { buildWorlds, worldIdFor } from "../core/worlds";
 import { readKoreWorlds } from "./koreWorlds";
 
 function sessionKeyOf(shell: EnvironmentThreadShell): string {
@@ -70,41 +78,59 @@ function toIslandSession(
   };
 }
 
-type WorldRulesLoad =
-  | { readonly status: "loading" }
-  | { readonly status: "loaded"; readonly rules: ReadonlyArray<WorldRule> }
-  | { readonly status: "failed"; readonly message: string };
+/** Settles a load whose request never answers, so the optional file cannot hold the island back. */
+const WORLD_RULES_SETTLE_MS = 20_000;
 
-/** The world rules, read once from the environment the island is connected to. */
-function useWorldRules(): WorldRulesLoad & { readonly settled: boolean } {
+function worldRulesEvent(
+  target: EnvironmentId,
+  result: AtomCommandResult<KoreWorldsResponse, unknown>,
+): WorldRulesEvent {
+  if (result._tag === "Success") return { type: "loaded", target, rules: result.value.worlds };
+  if (isAtomCommandInterrupted(result)) return { type: "interrupted", target };
+  const error = squashAtomCommandFailure(result);
+  return {
+    type: "failed",
+    target,
+    message: `The world rules could not be loaded: ${
+      error instanceof Error ? error.message : "unknown error"
+    }`,
+  };
+}
+
+/** The world rules, from the environment the island is connected to, loaded again when that changes. */
+function useWorldRules(): WorldRulesState {
   const primary = usePrimaryEnvironmentId();
   const connected = useConnectedEnvironmentIds();
   const environmentId =
     primary !== null && connected.includes(primary) ? primary : (connected[0] ?? null);
-  const [load, setLoad] = useState<WorldRulesLoad>({ status: "loading" });
+  const [stored, setStored] = useState(INITIAL_WORLD_RULES);
+  const state = nextWorldRules(stored, { type: "target", target: environmentId });
+  if (state !== stored) setStored(state);
   const read = useAtomCommand(readKoreWorlds, { reportFailure: false });
-  const requestRules = useEffectEvent((target: NonNullable<typeof environmentId>) =>
-    read({ environmentId: target }),
-  );
-  const pendingTarget = load.status === "loading" ? environmentId : null;
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Reads the rules file from the server once a connected environment is known.
+  const requestRules = useEffectEvent((target: EnvironmentId) => read({ environmentId: target }));
+  const loadingTarget =
+    state.result.status === "loading" && state.target === environmentId ? environmentId : null;
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Reads the rules file from the server whenever the environment to read it from changes.
   useEffect(() => {
-    if (pendingTarget === null) return;
-    void requestRules(pendingTarget).then((result) => {
-      if (result._tag === "Success") {
-        setLoad({ status: "loaded", rules: result.value.worlds });
-      } else if (!isAtomCommandInterrupted(result)) {
-        const error = squashAtomCommandFailure(result);
-        setLoad({
-          status: "failed",
-          message: `The world rules could not be loaded: ${
-            error instanceof Error ? error.message : "unknown error"
-          }`,
-        });
-      }
+    if (loadingTarget === null) return;
+    const dispatch = (event: WorldRulesEvent) =>
+      setStored((current) => nextWorldRules(current, event));
+    const timer = setTimeout(
+      () =>
+        dispatch({
+          type: "failed",
+          target: loadingTarget,
+          message: "The world rules could not be loaded: the server did not answer.",
+        }),
+      WORLD_RULES_SETTLE_MS,
+    );
+    void requestRules(loadingTarget).then((result) => {
+      clearTimeout(timer);
+      dispatch(worldRulesEvent(loadingTarget, result));
     });
-  }, [pendingTarget]);
-  return { ...load, settled: load.status !== "loading" || environmentId === null };
+    return () => clearTimeout(timer);
+  }, [loadingTarget]);
+  return state;
 }
 
 function toPendingRequest(
@@ -160,7 +186,7 @@ export function useT3IslandFeed(focusKey: string | null, defaultWorldName: strin
   });
 
   const worldRules = useWorldRules();
-  const rules = worldRules.status === "loaded" ? worldRules.rules : [];
+  const rules = worldRules.result.status === "loaded" ? worldRules.result.rules : [];
   const [deniedMarks, setDeniedMarks] = useState<DeniedMarks>(() => new Map());
 
   const projectsByKey = new Map(
@@ -257,10 +283,10 @@ export function useT3IslandFeed(focusKey: string | null, defaultWorldName: strin
   };
 
   return {
-    snapshot: { ready: ready && worldRules.settled, worlds },
+    snapshot: { ready: ready && worldRules.result.status !== "loading", worlds },
     pending,
     pendingLoading: detailRef !== null && detail === null,
-    worldsError: worldRules.status === "failed" ? worldRules.message : null,
+    worldsError: worldRules.result.status === "failed" ? worldRules.result.message : null,
     resolve,
     openInConsole,
   };
