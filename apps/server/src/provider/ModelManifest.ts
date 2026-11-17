@@ -4,6 +4,7 @@ import {
   type ProviderDriverKind,
 } from "@t3tools/contracts";
 import * as Clock from "effect/Clock";
+import * as Config from "effect/Config";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
@@ -24,6 +25,11 @@ import * as ModelCatalog from "@t3tools/provider-core/server/ModelCatalog";
 
 const MODEL_MANIFEST_URL =
   "https://raw.githubusercontent.com/pingdotgg/t3code/main/apps/server/src/provider/model-manifest.json";
+
+// Off unless opted in: the bundled manifest is served and upstream's repository is never fetched.
+const ManifestFetchEnabled = Config.Boolean("T3CODE_MODEL_MANIFEST_FETCH_ENABLED").pipe(
+  Config.withDefault(false),
+);
 
 const MANIFEST_TTL_MS = 60 * 60 * 1000;
 
@@ -195,6 +201,7 @@ const BundledOnlyModelManifest: ModelManifest["Service"] = {
 const layerBundledOnly = Layer.succeed(ModelManifest, BundledOnlyModelManifest);
 
 export const make = Effect.gen(function* () {
+  if (!(yield* ManifestFetchEnabled)) return BundledOnlyModelManifest;
   const fileSystem = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const config = yield* ServerConfig;
