@@ -45,22 +45,10 @@ export const makeClaudeEnvironment = Effect.fn("makeClaudeEnvironment")(function
   };
 });
 
-// A Claude Code session that launched T3 exports these. A claude spawned with them acts as part of
-// that session: its session id, messaging socket and token, and effort.
-const CLAUDE_HOST_SESSION_VARIABLES = [
-  "CLAUDECODE",
-  "CLAUDE_CODE_SESSION_ID",
-  "CLAUDE_CODE_HOST_SESSION_ID",
-  "CLAUDE_CODE_CHILD_SESSION",
-  "CLAUDE_CODE_SESSION_ATTENDED",
-  "CLAUDE_CODE_MESSAGING_SOCKET",
-  "CLAUDE_CODE_MESSAGING_TOKEN",
-  "CLAUDE_CODE_EXECPATH",
-  "CLAUDE_CODE_DESKTOP_APP_VERSION",
-  "CLAUDE_EFFORT",
-  "CLAUDE_PID",
-  "CLAUDE_AGENT_SDK_VERSION",
-];
+// The shell's keys, gateways and launching Claude Code session (its id, socket, token, effort) stay
+// out of claude; provider variables come from the instance's environment. Windows names ignore case.
+const isHostProviderVariable = (name: string) =>
+  /^(ANTHROPIC_|CLAUDE)/i.test(name) && name.toUpperCase() !== "CLAUDE_CONFIG_DIR";
 
 /**
  * Base env for the Claude processes T3 Code runs, before `makeClaudeEnvironment`.
@@ -71,11 +59,10 @@ export const mergeClaudeProcessEnvironment = Effect.fn("mergeClaudeProcessEnviro
   instanceEnvironment: ProviderInstanceEnvironment | undefined,
   hostEnvironment: NodeJS.ProcessEnv,
 ) {
-  const baseEnvironment: NodeJS.ProcessEnv = {
-    ...hostEnvironment,
-    CLAUDE_CODE_ENTRYPOINT: "t3-code",
-  };
-  for (const name of CLAUDE_HOST_SESSION_VARIABLES) delete baseEnvironment[name];
+  const baseEnvironment: NodeJS.ProcessEnv = Object.fromEntries(
+    Object.entries(hostEnvironment).filter(([name]) => !isHostProviderVariable(name)),
+  );
+  baseEnvironment.CLAUDE_CODE_ENTRYPOINT = "t3-code";
   // The desktop runs the server as Node through Electron. Commands Claude runs inherit its env, so
   // an Electron app they start (T3 Code itself, VS Code) would run as Node and exit.
   delete baseEnvironment.ELECTRON_RUN_AS_NODE;
