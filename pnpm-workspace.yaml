@@ -62,7 +62,7 @@ catalog:
   "@tailwindcss/node": 4.3.3
   "@tailwindcss/oxide": 4.3.3
   "@tailwindcss/vite": 4.3.3
-  "@types/node": 24.12.4
+  "@types/node": 26.6.6
   "@types/plist": 3.0.5
   "@types/react": ~19.3.0
   "@types/react-dom": ~19.3.0
