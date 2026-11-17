@@ -1,7 +1,39 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { sampleWorld as world } from "./sampleWorld";
+import type { IslandSession, IslandWorld } from "../core/contract";
 import { islandTotals, longestWait } from "./totals";
+
+function sessions(count: number, worldId: string): IslandSession[] {
+  return Array.from({ length: count }, (_, index) => ({
+    key: `env:${worldId}-${index}`,
+    ref: { environmentId: "env", threadId: `${worldId}-${index}` },
+    projectId: "project",
+    projectTitle: "Sample project",
+    title: "Tidy the build",
+    state: "idle",
+    station: "home",
+    createdAt: "2026-01-02T08:00:00.000Z",
+    updatedAt: "2026-01-02T08:00:00.000Z",
+    waitingSince: null,
+    worldId,
+    lastDecision: null,
+  }));
+}
+
+function world(
+  id: string,
+  figures: { visible: number; working: number; waiting: number; oldest: string | null },
+): IslandWorld {
+  return {
+    id,
+    name: id,
+    sessions: sessions(figures.visible, id),
+    working: figures.working,
+    waiting: figures.waiting,
+    oldestWaitingSince: figures.oldest,
+    usage: null,
+  };
+}
 
 describe("islandTotals", () => {
   it("adds the figures of every world and keeps the oldest wait", () => {
