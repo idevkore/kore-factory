@@ -1107,10 +1107,10 @@ it.effect("a task named only by environment inherits the parent's model, within 
         target: { environmentId: box.environmentId },
       });
       expect(result.isError, JSON.stringify(result.content)).toBe(false);
-      // The parent's model, and the link's modes rather than the parent's.
+      // The parent's model, and the box project's default mode (Supervised), within the link.
       expect(yield* Ref.get(thread.launchedWith)).toEqual({
         modelSelection,
-        runtimeMode: "auto-accept-edits",
+        runtimeMode: "approval-required",
         interactionMode: "default",
       });
 
