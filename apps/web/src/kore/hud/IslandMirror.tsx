@@ -16,7 +16,12 @@ export function IslandMirror(props: {
     <ul aria-label="Island sessions" className="sr-only">
       {props.sessions.map((session) =>
         props.flights.has(session.key) ? (
-          <li key={session.key} data-carrier-for={session.key} data-station={session.station}>
+          <li
+            key={session.key}
+            data-carrier-for={session.key}
+            data-station={session.station}
+            data-world-id={session.worldId}
+          >
             {capitalized(nouns.carrier)} in flight: {session.title}, landing at the{" "}
             {stationLabels[session.station]}
           </li>
@@ -26,8 +31,11 @@ export function IslandMirror(props: {
             data-session-key={session.key}
             data-state={session.state}
             data-station={session.station}
+            data-world-id={session.worldId}
+            data-last-decision={session.lastDecision ?? undefined}
           >
             {session.title}: {stateLabel(session.state)}, at the {stationLabels[session.station]}
+            {session.lastDecision === "denied" ? ", last approval denied" : null}
           </li>
         ),
       )}
