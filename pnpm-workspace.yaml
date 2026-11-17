@@ -209,6 +209,10 @@ overrides:
   # GHSA-9wv6-86v2-598j (ReDoS): @vercel/routing-utils pins 6.1.0 and already
   # compares it against 6.3.0 at runtime.
   "path-to-regexp@>=4.0.0 <6.3.0": 6.3.0
+  # GHSA-776f-qx25-q3cc (prototype pollution): dbus-next asks for ^0.4.17. 0.6.0, not
+  # 0.5.0: 0.5.0 returns null-prototype objects, 0.6.0 keeps plain ones and drops
+  # __proto__, constructor and prototype keys instead.
+  "xml2js@<0.5.0": 0.6.0
 
 packageExtensions:
   "@clerk/expo@*":
