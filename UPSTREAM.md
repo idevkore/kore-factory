@@ -27,6 +27,9 @@ Our own code lives in new files: `apps/web/src/kore/`, `apps/web/src/routes/_cha
 | `.repos/alchemy-effect/submodules/distilled`, `floci`  | Deleted: gitlinks with no `.gitmodules` entry that broke every `git submodule` command, including CI checkout.                                                                                       |
 | `apps/web/src/components/CommandPalette.tsx`           | Adds the "Open island" action, the way into `/island` without typing its URL.                                                                                                                        |
 | `apps/web/src/components/sidebar/SidebarChrome.tsx`    | Adds the Island button to the sidebar footer.                                                                                                                                                        |
+| `packages/contracts/src/environmentHttp.ts`            | Adds the `kore` group (`GET /api/kore/worlds`) and the `kore_worlds_load_failed` internal-error reason.                                                                                              |
+| `packages/contracts/src/index.ts`                      | Exports the island world schemas from `kore.ts`.                                                                                                                                                     |
+| `apps/server/src/server.ts`                            | Serves the island worlds route (`apps/server/src/kore/`).                                                                                                                                            |
 
 ## Taking a new upstream release
 
