@@ -105,6 +105,16 @@ export function IslandPage() {
   });
   const focused = sessions.find((session) => session.key === focusKey) ?? null;
 
+  const unpinnedWorld =
+    ready && activeWorld !== null && search.world !== activeWorld.id ? activeWorld.id : null;
+  const pinWorld = useEffectEvent((worldId: string) => {
+    void navigate({ search: (previous) => ({ ...previous, world: worldId }), replace: true });
+  });
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Writes the default world into the URL once the worlds load, so a session starting or waiting elsewhere cannot move it.
+  useEffect(() => {
+    if (unpinnedWorld !== null) pinWorld(unpinnedWorld);
+  }, [unpinnedWorld]);
+
   // Writes the world even when it is the default, so the default moving cannot switch it.
   const selectWorld = (worldId: string) => {
     if (
