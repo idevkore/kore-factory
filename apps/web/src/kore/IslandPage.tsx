@@ -214,16 +214,9 @@ function IslandView({ feed, focusKey, setFocusKey, simulated }: IslandViewProps)
           onCamera={setCamera}
           onResolve={feed.resolve}
           onOpenInConsole={feed.openInConsole}
+          simulated={simulated}
         />
         <IslandMirror sessions={sessions} flights={flights} wording={currentTheme} />
-        {simulated && (
-          <div
-            className="pointer-events-none absolute right-[396px] top-16 rounded-md border bg-background/95 px-2 py-1 font-medium text-muted-foreground text-xs"
-            data-testid="kore-island-simulated"
-          >
-            Simulated sessions
-          </div>
-        )}
         {[...flights].map((key) => (
           <CarrierLanding key={key} sessionKey={key} onLand={land} />
         ))}

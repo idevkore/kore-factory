@@ -11,12 +11,13 @@ interface WorldPickerProps {
 }
 
 /**
- * One button per world, from the `lg` breakpoint up. The region spans the left
- * edge; only the card inside it takes clicks, so the canvas below it keeps them.
+ * One button per world, from the `lg` breakpoint up. It takes the height the
+ * left column leaves; only the card inside it takes clicks, so the canvas below
+ * it keeps them.
  */
 export function WorldRail(props: WorldPickerProps) {
   return (
-    <div className="pointer-events-none absolute top-16 bottom-16 left-3 hidden w-44 flex-col lg:flex">
+    <div className="pointer-events-none hidden w-44 shrink-0 flex-col self-stretch lg:flex">
       <nav
         aria-label="Worlds"
         className="pointer-events-auto max-h-full overflow-y-auto rounded-lg border bg-background/95 p-1.5"

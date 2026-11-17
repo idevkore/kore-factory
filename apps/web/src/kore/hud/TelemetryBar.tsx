@@ -20,7 +20,7 @@ export function TelemetryBar(props: {
   return (
     <section
       aria-label="Island telemetry"
-      className="absolute top-3 right-[396px] left-3 flex flex-wrap items-center gap-x-6 gap-y-1 rounded-lg border bg-background/95 px-4 py-2"
+      className="pointer-events-auto flex flex-wrap items-center gap-x-6 gap-y-1 rounded-lg border bg-background/95 px-4 py-2"
     >
       <h1 className="font-semibold text-base">{props.worldName}</h1>
       <dl className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-xs">
