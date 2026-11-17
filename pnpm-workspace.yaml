@@ -213,6 +213,10 @@ overrides:
   # 0.5.0: 0.5.0 returns null-prototype objects, 0.6.0 keeps plain ones and drops
   # __proto__, constructor and prototype keys instead.
   "xml2js@<0.5.0": 0.6.0
+  # GHSA-238p-pmpm-9mq7 (inherited options such as `trust`): micromark-extension-llm-math
+  # asks for ^0.16.0 but calls only renderToString, in mathHtml, which remark-math
+  # never loads. 0.19.1 is the copy the web renders with.
+  "katex@>=0.11.0 <0.18.2": 0.19.1
 
 packageExtensions:
   "@clerk/expo@*":
