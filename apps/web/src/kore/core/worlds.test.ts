@@ -54,6 +54,39 @@ describe("titleMatches", () => {
     expect(titleMatches("a.c?e", "abcde")).toBe(false);
     expect(titleMatches("a.c?e", "A.C?E")).toBe(true);
   });
+
+  it("matches anything with * alone, and needs equality without a star", () => {
+    expect(titleMatches("*", "")).toBe(true);
+    expect(titleMatches("*", "Any title at all")).toBe(true);
+    expect(titleMatches("Acme", "ACME")).toBe(true);
+    expect(titleMatches("Acme", "Acme ")).toBe(false);
+    expect(titleMatches("", "")).toBe(true);
+    expect(titleMatches("", "Acme")).toBe(false);
+  });
+
+  it("treats every regex metacharacter as itself", () => {
+    const literal = ". + ? ^ $ { } ( ) | [ ] \\";
+    expect(titleMatches(literal, literal)).toBe(true);
+    expect(titleMatches(`x${literal}*`, `X${literal} tail`)).toBe(true);
+    expect(titleMatches(".", "a")).toBe(false);
+    expect(titleMatches("a+", "aa")).toBe(false);
+    expect(titleMatches("[ab]", "a")).toBe(false);
+    expect(titleMatches("\\d", "1")).toBe(false);
+  });
+
+  it("finds the middle pieces in order without overlapping the ends", () => {
+    expect(titleMatches("a*b*c", "a-b-c")).toBe(true);
+    expect(titleMatches("a*c*b", "a-b-c")).toBe(false);
+    expect(titleMatches("ab*ba", "aba")).toBe(false);
+    expect(titleMatches("a**b", "ab")).toBe(true);
+  });
+
+  // A backtracking matcher takes minutes here; a linear one finishes within the test timeout.
+  it("answers a run of stars against a long title that does not match", () => {
+    const title = "a".repeat(5_000);
+    expect(titleMatches(`${"*".repeat(20)}x`, title)).toBe(false);
+    expect(titleMatches(`${"*a".repeat(20)}x`, title)).toBe(false);
+  });
 });
 
 describe("pathMatches", () => {
@@ -90,6 +123,26 @@ describe("worldIdFor", () => {
     );
     expect(worldIdFor([], { title: "Other", workspaceRoot: null })).toBe(ALL_WORLD_ID);
   });
+
+  it("skips file worlds with a reserved id, so their projects fall through", () => {
+    const reserved = [
+      rule(UNSORTED_WORLD.id, { projects: ["Acme*"] }),
+      rule(ALL_WORLD_ID, { projects: ["Acme*"] }),
+      rule("acme", { projects: ["Acme API"] }),
+    ];
+    expect(worldIdFor(reserved, { title: "Acme API", workspaceRoot: null })).toBe("acme");
+    expect(worldIdFor(reserved, { title: "Acme web", workspaceRoot: null })).toBe(
+      UNSORTED_WORLD.id,
+    );
+    expect(
+      worldIdFor([rule(ALL_WORLD_ID, { projects: ["*"] })], { title: "Acme", workspaceRoot: null }),
+    ).toBe(ALL_WORLD_ID);
+  });
+
+  it("skips a later rule with a repeated id", () => {
+    const repeated = [rule("web", { projects: ["Site"] }), rule("web", { projects: ["Acme"] })];
+    expect(worldIdFor(repeated, { title: "Acme", workspaceRoot: null })).toBe(UNSORTED_WORLD.id);
+  });
 });
 
 describe("buildWorlds", () => {
@@ -118,6 +171,32 @@ describe("buildWorlds", () => {
       usage: null,
     });
     expect(worlds[0]).toMatchObject({ working: 0, waiting: 0, oldestWaitingSince: null });
+  });
+
+  it("keeps the built-in Unsorted and lists no file world with a reserved id", () => {
+    const worlds = buildWorlds({
+      rules: [
+        rule(UNSORTED_WORLD.id, {}),
+        rule(ALL_WORLD_ID, {}),
+        { ...rule("web", {}), name: "Web" },
+      ],
+      candidates: visible([session("b", UNSORTED_WORLD.id)]),
+      nowMs: NOW,
+      defaultName: "KORE Atoll",
+    });
+    expect(worlds.map((world) => [world.id, world.name])).toEqual([
+      ["web", "Web"],
+      [UNSORTED_WORLD.id, UNSORTED_WORLD.name],
+    ]);
+    const onlyReserved = buildWorlds({
+      rules: [rule(ALL_WORLD_ID, {})],
+      candidates: visible([session("a", ALL_WORLD_ID)]),
+      nowMs: NOW,
+      defaultName: "KORE Atoll",
+    });
+    expect(onlyReserved.map((world) => [world.id, world.name])).toEqual([
+      [ALL_WORLD_ID, "KORE Atoll"],
+    ]);
   });
 
   it("leaves Unsorted out when it has no visible sessions", () => {
