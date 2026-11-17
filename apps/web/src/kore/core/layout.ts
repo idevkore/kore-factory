@@ -112,8 +112,14 @@ export function stackPosition(station: StationId): Vec3 {
 export interface SessionStack {
   readonly station: StationId;
   readonly position: Vec3;
-  /** In station order; the first is the one a click on the stack focuses. */
+  /** The pile from the bottom up: station order, after the focused session's swap. */
   readonly keys: ReadonlyArray<string>;
+  /**
+   * What a click focuses: in the sessions past the cap in station order (before
+   * the swap), the one after the focused one, wrapping, else the first. So
+   * repeated clicks visit each of them in turn.
+   */
+  readonly next: string;
 }
 
 interface SessionLayout {
@@ -158,6 +164,7 @@ export function layoutSessions(
     const ordered = group.toSorted(station === "gate" ? byWaiting : byCreation);
     const cap = STANDING_CAP[station];
     const keys = ordered.map((session) => session.key);
+    const overflow = keys.slice(cap);
     const focusIndex = focusKey === null ? -1 : keys.indexOf(focusKey);
     if (focusKey !== null && focusIndex >= cap) {
       keys.splice(focusIndex, 1);
@@ -167,8 +174,10 @@ export function layoutSessions(
     for (const [index, key] of standingKeys.entries()) {
       standing.set(key, slotPosition(station, index, standingKeys.length));
     }
-    if (keys.length > cap) {
-      stacks.push({ station, position: stackPosition(station), keys: keys.slice(cap) });
+    const overflowIndex = focusKey === null ? -1 : overflow.indexOf(focusKey);
+    const next = overflow[(overflowIndex + 1) % overflow.length];
+    if (next !== undefined) {
+      stacks.push({ station, position: stackPosition(station), keys: keys.slice(cap), next });
     }
   }
   return { standing, stacks };

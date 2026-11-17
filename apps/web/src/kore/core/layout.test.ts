@@ -117,6 +117,7 @@ describe("layoutSessions", () => {
         station,
         position: stackPosition(station),
         keys: sessions.slice(cap).map((entry) => entry.key),
+        next: sessions[cap]?.key,
       },
     ]);
   });
@@ -139,13 +140,34 @@ describe("layoutSessions", () => {
     expect(layoutSessions(sessions, "intake-2")).toEqual(layoutSessions(sessions, null));
   });
 
-  it("stands the first stacked session after a click on its stack focuses it", () => {
+  it("visits every overflow session once per round of clicks on the stack", () => {
+    const sessions = crowd("work", 11);
+    const overflow = ["work-8", "work-9", "work-10"];
+    let focusKey: string | null = null;
+    const visited: string[] = [];
+    for (let click = 0; click <= overflow.length; click += 1) {
+      const next: string | null = layoutSessions(sessions, focusKey).stacks[0]?.next ?? null;
+      expect(next).not.toBe("work-7");
+      visited.push(next ?? "none");
+      focusKey = next;
+      expect(layoutSessions(sessions, focusKey).standing.has(next ?? "")).toBe(true);
+    }
+    expect(visited).toEqual([...overflow, overflow[0]]);
+  });
+
+  it("starts the stack's clicks at its first overflow session when focus stands", () => {
     const sessions = crowd("gate", 8);
-    const first = layoutSessions(sessions, null).stacks[0]?.keys[0];
-    expect(first).toBe("gate-6");
-    const { standing, stacks } = layoutSessions(sessions, first ?? null);
-    expect(standing.has("gate-6")).toBe(true);
-    expect(stacks[0]?.keys).toEqual(["gate-5", "gate-7"]);
+    expect(layoutSessions(sessions, "gate-2").stacks[0]?.next).toBe("gate-6");
+    expect(layoutSessions([...sessions, ...crowd("work", 1)], "work-0").stacks[0]?.next).toBe(
+      "gate-6",
+    );
+  });
+
+  it("never sends a click to the session the focused one displaced", () => {
+    const sessions = crowd("gate", 8);
+    const { stacks } = layoutSessions(sessions, "gate-7");
+    expect(stacks[0]?.keys).toEqual(["gate-5", "gate-6"]);
+    expect(stacks[0]?.next).toBe("gate-6");
   });
 });
 

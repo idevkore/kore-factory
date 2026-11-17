@@ -11,7 +11,8 @@ const DISC_STEP = 0.1;
 /**
  * The sessions past a station's cap: one flat disc each, piled up so the
  * pile's height is the count, each in its session's state colour from the
- * bottom up. A click focuses the first, which then stands.
+ * bottom up. A click focuses the stack's `next`, which then stands; repeated
+ * clicks visit every session past the cap in turn.
  */
 export function StationStack(props: {
   readonly stack: SessionStack;
@@ -23,8 +24,7 @@ export function StationStack(props: {
   const pileHeight = stack.keys.length * DISC_STEP;
   const focus = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
-    const first = stack.keys[0];
-    if (first !== undefined) onFocus(first);
+    onFocus(stack.next);
   };
   return (
     <group position={stack.position} onClick={focus}>
