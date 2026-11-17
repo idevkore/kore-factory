@@ -16,7 +16,7 @@ export function CameraDock(props: {
   return (
     <section
       aria-label="Camera and keys"
-      className="absolute right-[396px] bottom-3 left-3 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border bg-background/95 px-3 py-2"
+      className="pointer-events-auto flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border bg-background/95 px-3 py-2"
     >
       <div role="group" aria-label="Camera" className="flex gap-1">
         {CAMERAS.map(({ preset, name }) => (

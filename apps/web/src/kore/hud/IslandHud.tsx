@@ -15,9 +15,10 @@ import type { IslandWording } from "./wording";
 import { WorldRail, WorldRow } from "./WorldRail";
 
 /**
- * Cards over the canvas: telemetry along the top, worlds on the left, the panel
- * on the right, cameras and keys along the bottom. Nothing spans the gaps, so a
- * click between the cards reaches the canvas.
+ * Cards over the canvas: the panel on the right, and left of it one column of
+ * telemetry, worlds, and cameras and keys, so a card that wraps pushes the
+ * others instead of overlapping them. Only the cards take clicks, so a click
+ * between them reaches the canvas.
  */
 export function IslandHud(props: {
   readonly worlds: ReadonlyArray<IslandWorld>;
@@ -39,6 +40,7 @@ export function IslandHud(props: {
     resolution: Resolution,
   ) => Promise<void>;
   readonly onOpenInConsole: (sessionKey: string) => void;
+  readonly simulated: boolean;
 }) {
   const { worlds, focused } = props;
   const world = worlds.find((entry) => entry.id === props.activeWorldId) ?? null;
@@ -47,16 +49,32 @@ export function IslandHud(props: {
   const multipleWorlds = worlds.length > 1;
   return (
     <>
-      <TelemetryBar worlds={worlds} worldName={worldName} nowMs={props.nowMs} />
-
-      {multipleWorlds ? (
-        <WorldRail
-          worlds={worlds}
-          activeWorldId={world?.id ?? null}
-          nowMs={props.nowMs}
-          onSelectWorld={props.onSelectWorld}
+      <div className="pointer-events-none absolute inset-y-3 right-[396px] left-3 flex flex-col gap-3">
+        <TelemetryBar worlds={worlds} worldName={worldName} nowMs={props.nowMs} />
+        <div className="flex min-h-0 flex-1 items-start gap-3">
+          {multipleWorlds ? (
+            <WorldRail
+              worlds={worlds}
+              activeWorldId={world?.id ?? null}
+              nowMs={props.nowMs}
+              onSelectWorld={props.onSelectWorld}
+            />
+          ) : null}
+          {props.simulated ? (
+            <p
+              className="ml-auto rounded-md border bg-background/95 px-2 py-1 font-medium text-muted-foreground text-xs"
+              data-testid="kore-island-simulated"
+            >
+              Simulated sessions
+            </p>
+          ) : null}
+        </div>
+        <CameraDock
+          camera={props.camera}
+          multipleWorlds={multipleWorlds}
+          onCamera={props.onCamera}
         />
-      ) : null}
+      </div>
 
       <aside
         aria-label="Island panel"
@@ -123,8 +141,6 @@ export function IslandHud(props: {
           />
         )}
       </aside>
-
-      <CameraDock camera={props.camera} multipleWorlds={multipleWorlds} onCamera={props.onCamera} />
     </>
   );
 }
